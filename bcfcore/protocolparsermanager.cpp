@@ -25,20 +25,18 @@ std::shared_ptr<IProtocolParser> ProtocolParserManager::findParse(ProtocolType i
 }
 
 
-void ProtocolParserManager::parseByID(bcf::ProtocolType id, const unsigned char* data,
-                                      const uint32_t len,
+void ProtocolParserManager::parseByID(bcf::ProtocolType id, const std::string& data,
                                       std::function<void(IProtocolParser::ParserState, std::shared_ptr<AbstractProtocolModel> model)>
                                       _callback)
 {
     const auto itr = parsers.find(id);
     if (itr != parsers.end()) {
         const auto& parser = itr->second;
-        parser->parse(data, len, _callback);
+        parser->parse(data, _callback);
     }
 }
 
-void ProtocolParserManager::parseByAll(const unsigned char* data,
-                                       const uint32_t len,
+void ProtocolParserManager::parseByAll(const std::string& data,
                                        std::function<void (IProtocolParser::ParserState, std::shared_ptr<AbstractProtocolModel>)>
                                        _callback)
 {
@@ -46,7 +44,7 @@ void ProtocolParserManager::parseByAll(const unsigned char* data,
     std::shared_ptr<AbstractProtocolModel> model;
     for (auto& p : parsers) {
         auto& parser = p.second;
-        parser->parse(data, len, [&](IProtocolParser::ParserState _state,
+        parser->parse(data, [&](IProtocolParser::ParserState _state,
         std::shared_ptr<AbstractProtocolModel> _model) {
             state = _state;
             model = _model;

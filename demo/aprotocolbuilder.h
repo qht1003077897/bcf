@@ -6,7 +6,6 @@ class AProtocolBuilder : public bcf::IProtocolBuilder
 {
 protected:
     virtual bcf::ProtocolType getType()const override;
-    virtual uint32_t build(std::shared_ptr<bcf::AbstractProtocolModel> model,
-                           unsigned char* data) override;
+    virtual std::string build(std::shared_ptr<bcf::AbstractProtocolModel> model) override;
 };
 

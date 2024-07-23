@@ -17,7 +17,8 @@ public:
     };
 
     virtual bcf::ProtocolType getType()const = 0;
-    virtual void parse(const unsigned char* data, const uint32_t size,
+    //使用者自己实现parse函数，通过回调返回parser好的数据和parser状态
+    virtual void parse(const std::string& data,
                        std::function<void(ParserState, std::shared_ptr<AbstractProtocolModel> model)>) = 0;
 };
 }

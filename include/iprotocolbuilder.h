@@ -8,6 +8,6 @@ class IProtocolBuilder
 {
 public:
     virtual ProtocolType getType()const = 0;
-    virtual uint32_t build(std::shared_ptr<AbstractProtocolModel> model, unsigned char* data) = 0;
+    virtual std::string build(std::shared_ptr<AbstractProtocolModel> model) = 0;
 };
 }

@@ -2,6 +2,11 @@
 
 #include <functional>
 #include <string>
+#include <memory>
+#include <mutex>
+#include <map>
+#include <deque>
+#include <globaldefine.h>
 
 namespace bcf
 {
@@ -23,19 +28,52 @@ enum class ChannelState {
 class __declspec(dllexport) IChannel
 {
 public:
-    virtual bcf::ChannelID channelID() = 0;
+    virtual ~IChannel();
 
-    virtual bool open() = 0;
+    virtual bcf::ChannelID channelID() = 0;
     virtual bool isOpen() = 0;
-    virtual void close() = 0;
+    virtual bool open();
+    virtual void close();
 
     virtual int64_t send(const unsigned char* data, uint32_t len) = 0;
-    virtual void receive(std::function<void(int code, const unsigned char* data, uint32_t len)>) = 0;
-    virtual void onError(std::function<void (std::string)>) = 0;
+    //底层具体的通道每收到一次数据，调用此函数交给bcf来迁移到用户线程进行转发
+    virtual void pushData2Bcf(const std::string&);
+    virtual void setDataCallback(bcf::DataCallback&&);
 
-    virtual uint32_t read(unsigned char* buff, uint32_t len) = 0;
-    virtual uint32_t write(unsigned char* buff, uint32_t len) = 0;
+    virtual uint32_t read(unsigned char* buff, uint32_t len)
+    {
+        return -1;
+    };
+    virtual uint32_t write(unsigned char* buff, uint32_t len)
+    {
+        return -1;
+    };
 
-    virtual const char* readAll() = 0;
+    virtual const char* readAll()
+    {
+        return nullptr;
+    };
+
+protected:
+    //必须重写
+    virtual bool openChannel() = 0;
+    virtual bool closeChannel() = 0;
+
+private:
+    void startUserCallbackThread();
+    void stopUserCallbackThread();
+    void pushqueueAndNotify(const std::string& data);
+    std::deque<std::string> popall();
+
+private:
+    std::deque<std::string> m_dataQueue;
+    std::atomic_bool m_isexit;
+    std::mutex m_mtx;
+    std::mutex m_mtxuserdata;
+    std::condition_variable m_cv;
+    std::thread m_usercallbackthread;
+
+    bcf::ChannelState m_state = ChannelState::Idel;
+    bcf::DataCallback m_dataCallback;
 };
 }

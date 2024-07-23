@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 #include <memory>
+#include <functional>
 #include <map>
-#include <set>
 #include <bcfexport.h>
 #include <ichannel.h>
 

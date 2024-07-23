@@ -1,4 +1,7 @@
 ﻿#pragma once
+#include <functional>
+#include <memory>
+#include <abstractprotocolmodel.h>
 
 namespace bcf
 {
@@ -7,12 +10,21 @@ enum ErrorCode {
     CHANNEL_CLOSE = 0x0100,            //通信链路相关错误
     PROTOCOL_NOT_EXIST = 0x0200,       //协议相关错误
     // = 0x0300,                       //其他错误
-    TIME_OUT = 0x0300                  //(通信)超时
+    TIME_OUT = 0x0300,                 //(通信)超时
+    UNOWNED_DATA = 0x0400,             //没有找到seq的数据，可能时底层主动上报的数据
 };
 
 enum FilterType {
     Abandon = 0x0001,                   //Abandon过滤器，可以过滤对端返回的无法被解析的数据，交给过滤器去处理，且允许放行
 };
+
+using RequestCallback =
+    std::function<void(bcf::ErrorCode, std::shared_ptr<bcf::AbstractProtocolModel>)>;
+using ReceiveCallback = RequestCallback;
+using AbandonCallback =
+    std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
+using DataCallback = std::function<void(const std::string&)>;
+using ErrorCallback = DataCallback;
 }
 
 #define CHECK_RANGE(value, min, max) \

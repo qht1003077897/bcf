@@ -16,8 +16,7 @@ public:
 
 public:
     void addBuilder(std::shared_ptr<IProtocolBuilder> newBuilder);
-    uint32_t build(bcf::ProtocolType id, std::shared_ptr<AbstractProtocolModel> model,
-                   unsigned char* data);
+    std::string build(bcf::ProtocolType id, std::shared_ptr<AbstractProtocolModel> model);
 
 private:
     std::map<ProtocolType, std::shared_ptr<IProtocolBuilder>> builders;

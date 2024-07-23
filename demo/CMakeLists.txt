@@ -12,6 +12,8 @@ add_executable(bcf
     aprotocolbuilder.h
     aprotocolbuilder.cpp)
 
+target_link_libraries(bcf PRIVATE bcfcore)
+
 include(GNUInstallDirs)
 install(TARGETS bcf
     LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}

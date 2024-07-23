@@ -5,8 +5,7 @@ bcf::ProtocolType AProtocolBuilder::getType() const
     return bcf::ProtocolType::A;
 }
 
-uint32_t AProtocolBuilder::build(std::shared_ptr<bcf::AbstractProtocolModel> _model,
-                                 unsigned char* data)
+std::string AProtocolBuilder::build(std::shared_ptr<bcf::AbstractProtocolModel> _model)
 {
     std::shared_ptr<bcf::AProtocolModel> model = std::dynamic_pointer_cast<bcf::AProtocolModel>(_model);
 //    QString buffer;
@@ -47,5 +46,5 @@ uint32_t AProtocolBuilder::build(std::shared_ptr<bcf::AbstractProtocolModel> _mo
 //    QByteArray resArray = QByteArray::fromHex(buffer.toUtf8());
 //    qDebug() << "QByteArray Hex sendData:" << resArray;
 //    return resArray;
-    return 1;
+    return "";
 }
