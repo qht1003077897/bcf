@@ -48,3 +48,14 @@ std::string AProtocolBuilder::build(std::shared_ptr<bcf::AbstractProtocolModel> 
 //    return resArray;
     return "";
 }
+
+bcf::ProtocolType AProtocolParser::getType() const
+{
+    return bcf::ProtocolType::A;
+}
+
+void AProtocolParser::parse(const std::string& data,
+                            std::function<void (ParserState, std::shared_ptr<bcf::AbstractProtocolModel>)>)
+{
+
+}

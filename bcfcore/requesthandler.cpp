@@ -21,12 +21,20 @@ RequestHandlerBuilder& RequestHandlerBuilder::withAbandonCallback(bcf::AbandonCa
     return *this;
 }
 
+RequestHandlerBuilder& RequestHandlerBuilder::withProtocolParsers(
+    const std::vector<std::shared_ptr<IProtocolParser>>& protocolParsers)
+{
+    m_requestHandler->setProtocolParsers(protocolParsers);
+    return *this;
+}
+
 std::shared_ptr<RequestHandler> RequestHandlerBuilder::build()
 {
     return m_requestHandler;
 }
 
-RequestHandler::RequestHandler()
+RequestHandler::RequestHandler():
+    protocolParserManager(std::make_unique<ProtocolParserManager>())
 {
     startTimeOut();
 }
@@ -50,20 +58,26 @@ void RequestHandler::request(std::shared_ptr<bcf::AbstractProtocolModel> model,
     std::string res = ProtocolBuilderManager::getInstance().build(model->protocolType(), model);
     {
         std::unique_lock<std::mutex> l(m_mtx);
-        callbacks.insert(std::make_pair(model->seq, std::make_pair(m_timeoutMillSeconds,
-                                                                   std::move(callback))));
+        if (callbacks.find(channel->channelID()) == callbacks.end()) {
+            std::map<int, std::pair<int, std::shared_ptr<RequestCallback>>> seqMaps;
+            callbacks.emplace(channel->channelID(), seqMaps);
+        }
+        auto& seqMaps = callbacks[channel->channelID()];
+        seqMaps.insert(std::make_pair(model->seq,
+                                      std::make_pair(m_timeoutMillSeconds,
+                                                     std::move(callback))));
     }
     channel->send((unsigned char*)res.c_str(), res.length());
 }
 
 //如何区分是发送回复的还是主动上报的？因此全部都是走receive，receive里面根据业务ID判断转给哪个callback
 //如果能匹配到seq,则直接callback,如果匹配不到,则是主动上报的,交给receive调用点进行转发处理
-void RequestHandler::receive(ReceiveCallback _callback, bcf::ChannelID id)
+void RequestHandler::receive(ReceiveCallback _callback, bcf::ChannelID channelId)
 {
     bcf::DataCallback call =  [ =, callback = std::move(_callback)](const std::string dataStr) {
 
-        ProtocolParserManager::getInstance().parseByAll(dataStr, [ = ](bcf::IProtocolParser::ParserState
-                                                                       state,
+        protocolParserManager->parseByAll(dataStr, [ = ](bcf::IProtocolParser::ParserState
+                                                         state,
         std::shared_ptr<bcf::AbstractProtocolModel> model) {
             if (state == IProtocolParser::WaitingStick) {
                 printf("wait parsing...,state is WaitingStick");
@@ -77,13 +91,14 @@ void RequestHandler::receive(ReceiveCallback _callback, bcf::ChannelID id)
 
             {
                 int key = model->seq;
+                auto& seqMaps = callbacks[channelId];
                 std::unique_lock<std::mutex> l(m_mtx);
-                const auto& itr = callbacks.find(key);
-                if (itr != callbacks.end()) {
+                const auto& itr = seqMaps.find(key);
+                if (itr != seqMaps.end()) {
                     if (nullptr != itr->second.second) {
                         std::bind(*(itr->second.second), bcf::ErrorCode::OK, model)();
                     }
-                    callbacks.erase(itr);
+                    seqMaps.erase(itr);
                     return;
                 }
             }
@@ -93,13 +108,8 @@ void RequestHandler::receive(ReceiveCallback _callback, bcf::ChannelID id)
         });
     };
 
-    const auto channel = ChannelManager::getInstance().getChannel(id);
+    const auto channel = ChannelManager::getInstance().getChannel(channelId);
     channel->setDataCallback(std::move(call));
-}
-
-void RequestHandler::addInterceptor()
-{
-
 }
 
 void RequestHandler::setTimeOut(int timeoutMillSeconds)
@@ -112,24 +122,36 @@ void RequestHandler::setAbandonCallback(AbandonCallback &&callback)
     m_abandonCallback = std::move(callback);
 }
 
+void RequestHandler::setProtocolParsers(const
+                                        std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers)
+{
+    for (const auto& p : protocolParsers) {
+        protocolParserManager->addParser(std::move(p));
+    }
+}
+
 void RequestHandler::startTimeOut()
 {
     auto timeOutThread = std::thread([this]() {
         while (!m_isexit) {
             std::unique_lock<std::mutex> l(m_mtx);
-            auto it  = callbacks.begin();
-            while (it != callbacks.end()) {
-                if ( 0 == it->second.first) {
-                    //超时时间减到0
-                    printf("seq: %d timeout,remove it!", it->first);
-                    std::bind(*(it->second.second), bcf::ErrorCode::TIME_OUT, nullptr)();
-                    callbacks.erase(it++);
-                    continue;
-                }
+            for (auto& seqMapsIter : callbacks) {
+                auto& seqMaps = seqMapsIter.second;
+                auto it  = seqMaps.begin();
+                while (it != seqMaps.end()) {
 
-                //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
-                it->second.first = std::max(0,  it->second.first - 1000);
-                it++;
+                    if ( 0 == it->second.first) {
+                        //超时时间减到0
+                        printf("seq: %d timeout,remove it!", it->first);
+                        std::bind(*(it->second.second), bcf::ErrorCode::TIME_OUT, nullptr)();
+                        seqMaps.erase(it++);
+                        continue;
+                    }
+
+                    //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
+                    it->second.first = std::max(0,  it->second.first - 1000);
+                    it++;
+                }
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }

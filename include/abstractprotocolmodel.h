@@ -6,7 +6,6 @@ namespace bcf
 {
 
 enum ProtocolType {
-    None = 0,
     A = 1,
     B = 2,
     //...
@@ -15,10 +14,7 @@ enum ProtocolType {
 struct AbstractProtocolModel {
     uint32_t seq = 1;
     uint32_t cmd = 0x01;
-    virtual ProtocolType protocolType()
-    {
-        return ProtocolType::None;
-    };
+    virtual ProtocolType protocolType() = 0;
 };
 
 

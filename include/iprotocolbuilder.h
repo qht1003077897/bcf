@@ -7,6 +7,7 @@ namespace bcf
 class IProtocolBuilder
 {
 public:
+    virtual ~IProtocolBuilder() = default;
     virtual ProtocolType getType()const = 0;
     virtual std::string build(std::shared_ptr<AbstractProtocolModel> model) = 0;
 };
