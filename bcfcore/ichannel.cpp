@@ -28,10 +28,15 @@ void IChannel::close()
     stopUserCallbackThread();
 }
 
-void IChannel::setDataCallback(bcf::DataCallback && dataDallback)
+void IChannel::setDataCallback(DataCallback && dataDallback)
 {
     std::unique_lock<std::mutex> l(m_mtxuserdata);
     m_dataCallback = std::move(dataDallback);
+}
+
+void IChannel::setErrorCallback(ErrorCallback&& errorCallback)
+{
+    m_errorCallback = std::move(errorCallback);
 }
 
 void IChannel::pushData2Bcf(const std::string& data)

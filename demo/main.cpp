@@ -2,28 +2,30 @@
 #include <abstractprotocolmodel.h>
 #include "aprotocolbuilder.h"
 #include "requesthandler.h"
+#include "serialchannel.h"
+#include <QCoreApplication>
 using namespace std;
 
-int main()
+int main(int argc, char* argv[])
 {
-    auto abandonCallBack = [](std::shared_ptr<bcf::AbstractProtocolModel> model) {
+    QCoreApplication app(argc, argv);
+    std::shared_ptr<bcf::RequestHandler> request
+        = bcf::RequestHandlerBuilder()
+          .withTimeOut(100'000)
+          .withProtocolParsers({std::make_shared<AProtocolParser>()})
+    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
         cout << "protocolType:" << model->protocolType() << endl;
-    };
-
-
-    std::shared_ptr<bcf::IProtocolParser> aProtocolParser = std::make_shared<AProtocolParser>();
-    bcf::RequestHandlerBuilder builder;
-    auto handler = builder
-                   .WithTimeOut(100'000)
-                   .withAbandonCallback(abandonCallBack)
-                   .withProtocolParsers({aProtocolParser})
-                   .build();
-
-    handler->receive([](bcf::ErrorCode code, std::shared_ptr<bcf::AbstractProtocolModel> model) {
+    })
+    .withChannel(bcf::ChannelID::Serial, []() {
+        return std::make_shared<bcf::SerialChannel>();
+    })
+    .withSerialPortPortName("COM2")
+    .withReceiveData([](bcf::ErrorCode code, std::shared_ptr<bcf::AbstractProtocolModel> model) {
         cout << "code:" << code << endl;
         cout << "protocolType:" << model->protocolType() << endl;
-    },
-    bcf::ChannelID::TCP);
+    })
+    .asyncConnect();
 
-    return 0;
+//    request->request();
+    return app.exec();
 }

@@ -1,12 +1,6 @@
 ﻿#include "channelmanager.h"
 using namespace bcf;
 
-ChannelManager& ChannelManager::getInstance()
-{
-    static ChannelManager instance;
-    return instance;
-}
-
 void ChannelManager::addChannel(bcf::ChannelID id, std::shared_ptr<IChannel> channel)
 {
     if (nullptr == channel) {
@@ -41,12 +35,18 @@ std::shared_ptr<IChannel> ChannelManager::getChannel(bcf::ChannelID id)
     return iter->second;
 }
 
-void ChannelManager::bindCmdAndChannel(uint32_t cmd, ChannelID channelID)
+void ChannelManager::registerChannel(bcf::ChannelID type, CreateChannelFunc func)
 {
-    channelIdOfCmds[cmd] = channelID;
+    channelCreators[type] = func;
 }
 
-ChannelID ChannelManager::getChannelIDOfCmd(uint32_t cmd)
+std::shared_ptr<bcf::IChannel> ChannelManager::CreateChannel(bcf::ChannelID id)
 {
-    return channelIdOfCmds[cmd];
+    auto it = channelCreators.find(id);
+    if (it != channelCreators.end()) {
+        std::shared_ptr<bcf::IChannel> channel =  it->second();
+        addChannel(id, channel);
+        return channel;
+    }
+    throw std::invalid_argument("Unknown ChannelID");
 }

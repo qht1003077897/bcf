@@ -14,8 +14,47 @@ enum ErrorCode {
     UNOWNED_DATA = 0x0400,             //没有找到seq的数据，可能时底层主动上报的数据
 };
 
-enum FilterType {
-    Abandon = 0x0001,                   //Abandon过滤器，可以过滤对端返回的无法被解析的数据，交给过滤器去处理，且允许放行
+enum BaudRate {
+    Baud1200 = 1200,
+    Baud2400 = 2400,
+    Baud4800 = 4800,
+    Baud9600 = 9600,
+    Baud19200 = 19200,
+    Baud38400 = 38400,
+    Baud57600 = 57600,
+    Baud115200 = 115200,
+    UnknownBaud = -1
+};
+
+enum DataBits {
+    Data5 = 5,
+    Data6 = 6,
+    Data7 = 7,
+    Data8 = 8,
+    UnknownDataBits = -1
+};
+
+enum Parity {
+    NoParity = 0,
+    EvenParity = 2,
+    OddParity = 3,
+    SpaceParity = 4,
+    MarkParity = 5,
+    UnknownParity = -1
+};
+
+enum StopBits {
+    OneStop = 1,
+    OneAndHalfStop = 3,
+    TwoStop = 2,
+    UnknownStopBits = -1
+};
+
+enum FlowControl {
+    NoFlowControl,
+    HardwareControl,
+    SoftwareControl,
+    UnknownFlowControl = -1
 };
 
 using RequestCallback =
@@ -23,17 +62,4 @@ using RequestCallback =
 using ReceiveCallback = RequestCallback;
 using AbandonCallback =
     std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
-using DataCallback = std::function<void(const std::string&)>;
-using ErrorCallback = DataCallback;
 }
-
-#define CHECK_RANGE(value, min, max) \
-    static_assert((value) >= (min) && (value) <= (max), "value out of range")
-/**
- * 绑定cmd和通道ID的关系。真实的业务场景下，cmd代表业务的唯一ID，则肯定属于某一个通道。如果两个通道有一样的cmd，证明协议设计是不合理的
-**/
-#define ADD_CMD_TO_BCF(cmd,channelID) \
-    { \
-        CHECK_RANGE(channelID, bcf::ChannelID::Begin, bcf::ChannelID::End);\
-        ChannelManager::getInstance().bindCmdAndChannel((uint32_t)cmd,bcf::ChannelID(channelID));\
-    } \
