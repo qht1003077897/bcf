@@ -14,7 +14,7 @@ IChannel::~IChannel()
 
 bool IChannel::open()
 {
-    bool res = openChannel();
+    bool res = openInternal();
     if (res) {
         startUserCallbackThread();
         m_state = ChannelState::Opened;
@@ -24,7 +24,7 @@ bool IChannel::open()
 
 void IChannel::close()
 {
-    closeChannel();
+    closeInternal();
     m_state = ChannelState::Closed;
     stopUserCallbackThread();
 }
@@ -38,6 +38,16 @@ void IChannel::setDataCallback(DataCallback && dataDallback)
 void IChannel::setErrorCallback(ErrorCallback&& errorCallback)
 {
     m_errorCallback = std::move(errorCallback);
+}
+
+void IChannel::setFailedCallback(ConnectionFailCallback &&callback)
+{
+    m_FailCallback = std::move(callback);
+}
+
+void IChannel::setConnectionCompletedCallback(ConnectionCompletedCallback &&callback)
+{
+    m_CompleteCallback = std::move(callback);
 }
 
 void IChannel::pushData2Bcf(const std::string& data)

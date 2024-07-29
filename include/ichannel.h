@@ -16,14 +16,10 @@ namespace bcf
 class IChannel;
 using DataCallback = std::function<void(const std::string&)>;
 using ErrorCallback = DataCallback;
+using GenChannelIDFunc = std::function<int()>;
 using CreateChannelFunc = std::function<std::shared_ptr<bcf::IChannel>()>;
 using ConnectionCompletedCallback = std::function<void(std::shared_ptr<bcf::IChannel>)>;
 using ConnectionFailCallback = std::function<void()>;
-
-enum ChannelID {
-    Serial = 0x01,
-    TCP = 0x02
-};
 
 enum class ChannelState {
     Idel = 0x01,
@@ -34,18 +30,25 @@ enum class ChannelState {
 
 struct ConnectOption {
     int32_t m_timeoutMillSeconds = 10'000;//ms
-    bcf::ChannelID m_channelid;
+    int m_channelid;//bcf自动生成
     bcf::ConnectionFailCallback m_FailCallback;
     bcf::ConnectionCompletedCallback m_CompleteCallback;
     bcf::ReceiveCallback m_ReceiveCallback;
 };
 
-class BCF_EXPORT IChannel
+class BCF_EXPORT IChannel: public std::enable_shared_from_this<IChannel>
 {
 public:
     virtual ~IChannel();
 
-    virtual bcf::ChannelID channelID() = 0;
+    inline void setChannelID(int channelID)
+    {
+        m_channelID = channelID;
+    };
+    virtual int channelID() const
+    {
+        return m_channelID;
+    };
     virtual bool isOpen() = 0;
     virtual bool open();
     virtual void close();
@@ -55,7 +58,13 @@ public:
     virtual void pushData2Bcf(const std::string&);
     virtual void setDataCallback(DataCallback&&);
     virtual void setErrorCallback(ErrorCallback&&);
-
+    virtual void setFailedCallback(ConnectionFailCallback&& callback);
+    virtual void setConnectionCompletedCallback(
+        ConnectionCompletedCallback&& callback);
+    std::shared_ptr<IChannel> getSharedFromThis()
+    {
+        return shared_from_this();
+    }
     virtual uint32_t read(unsigned char* buff, uint32_t len)
     {
         return -1;
@@ -72,8 +81,8 @@ public:
 
 protected:
     //必须重写
-    virtual bool openChannel() = 0;
-    virtual bool closeChannel() = 0;
+    virtual bool openInternal() = 0;
+    virtual bool closeInternal() = 0;
 
 private:
     void startUserCallbackThread();
@@ -84,6 +93,8 @@ private:
 protected:
     DataCallback m_dataCallback;
     ErrorCallback m_errorCallback;
+    bcf::ConnectionFailCallback m_FailCallback;
+    bcf::ConnectionCompletedCallback m_CompleteCallback;
 
 private:
     std::deque<std::string> m_Queue;
@@ -91,6 +102,7 @@ private:
     std::mutex m_QueueMtx;
     std::condition_variable m_QueueCV;
     std::shared_ptr<std::thread> m_usercallbackthread;
+    int m_channelID = -1;
 
     bcf::ChannelState m_state = ChannelState::Idel;
 

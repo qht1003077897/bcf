@@ -11,17 +11,17 @@ namespace bcf
 class BCF_EXPORT ChannelManager: public bcf::NonCopyable
 {
 public:
-    void registerChannel(bcf::ChannelID type, CreateChannelFunc func);
+    void registerChannel(int, CreateChannelFunc func);
 
-    std::shared_ptr<bcf::IChannel> CreateChannel(bcf::ChannelID id);
+    std::shared_ptr<bcf::IChannel> CreateChannel(int id);
 
-    std::shared_ptr<IChannel> getChannel(bcf::ChannelID);
+    std::shared_ptr<IChannel> getChannel(int);
 private:
-    void addChannel(bcf::ChannelID, std::shared_ptr<IChannel>);
-    void removeChannel(bcf::ChannelID);
+    void addChannel(int, std::shared_ptr<IChannel>);
+    void removeChannel(int);
 
 private:
-    std::map<bcf::ChannelID, std::shared_ptr<IChannel>> channels;
-    std::map<bcf::ChannelID, CreateChannelFunc> channelCreators;
+    std::map<int, std::shared_ptr<IChannel>> channels;
+    std::map<int, CreateChannelFunc> channelCreators;
 };
 }

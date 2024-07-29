@@ -52,19 +52,23 @@ void SerialChannel::setFlowControl(QSerialPort::FlowControl flowControl)
     pSerialPort->setFlowControl((QSerialPort::FlowControl)flowControl);
 }
 
-bcf::ChannelID SerialChannel::channelID()
-{
-    return bcf::ChannelID::Serial;
-}
-
-bool SerialChannel::openChannel()
+bool SerialChannel::openInternal()
 {
     bool res =  pSerialPort->open(QSerialPort::ReadWrite);
     qDebug() << "Open:" << pSerialPort->portName() << ":" << res;
+    if (!res) {
+        if (m_FailCallback) {
+            m_FailCallback();
+        }
+    } else {
+        if (m_CompleteCallback) {
+            m_CompleteCallback(getSharedFromThis());
+        }
+    }
     return res;
 }
 
-bool SerialChannel::closeChannel()
+bool SerialChannel::closeInternal()
 {
     qDebug() << "Close:" << pSerialPort->portName();
     if (pSerialPort->isOpen()) {

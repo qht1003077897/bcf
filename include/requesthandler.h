@@ -27,7 +27,7 @@ public:
     RequestHandlerBuilder& withProtocolParsers(
         const std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers);
 
-    RequestHandlerBuilder& withChannel(bcf::ChannelID channelid, CreateChannelFunc&&);
+    RequestHandlerBuilder& withChannel(int channelID, CreateChannelFunc&&);
 
     RequestHandlerBuilder& withFailedCallback(bcf::ConnectionFailCallback&& callback);
 

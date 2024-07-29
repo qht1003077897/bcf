@@ -28,7 +28,7 @@ private:
     void setProtocolParsers(const
                             std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers);
     void receive(bcf::ReceiveCallback&& _callback);
-    void asyncConnect();
+    void connect();
 
 private:
     friend class RequestHandlerBuilder;
@@ -73,11 +73,11 @@ RequestHandlerBuilder& RequestHandlerBuilder::withProtocolParsers(
     return *this;
 }
 
-RequestHandlerBuilder& RequestHandlerBuilder::withChannel(ChannelID channelid,
+RequestHandlerBuilder& RequestHandlerBuilder::withChannel(int channelID,
                                                           CreateChannelFunc&& func)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_channelid = channelid;
-    m_requestHandler->d_ptr->m_channelManager->registerChannel(channelid, std::move(func));
+    m_requestHandler->d_ptr->m_ConnectOption.m_channelid = channelID;
+    m_requestHandler->d_ptr->m_channelManager->registerChannel(channelID, std::move(func));
     return *this;
 }
 
@@ -102,7 +102,7 @@ RequestHandlerBuilder& RequestHandlerBuilder::withReceiveData(ReceiveCallback&& 
 
 std::shared_ptr<RequestHandler> RequestHandlerBuilder::connect()
 {
-    m_requestHandler->d_ptr->asyncConnect();
+    m_requestHandler->d_ptr->connect();
     return m_requestHandler;
 }
 
@@ -207,9 +207,11 @@ void RequestHandler::RequestHandlerPrivate::setProtocolParsers(const
     }
 }
 
-void RequestHandler::RequestHandlerPrivate::asyncConnect()
+void RequestHandler::RequestHandlerPrivate::connect()
 {
     auto channel =  m_channelManager->CreateChannel(m_ConnectOption.m_channelid);
+    channel->setFailedCallback(std::move(m_ConnectOption.m_FailCallback));
+    channel->setConnectionCompletedCallback(std::move(m_ConnectOption.m_CompleteCallback));
     if (nullptr != channel) {
         channel->open();
         receive(std::move(m_ConnectOption.m_ReceiveCallback));
