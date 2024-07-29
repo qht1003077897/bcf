@@ -3,12 +3,14 @@
 #include <vector>
 #include <ichannel.h>
 #include <bcfexport.h>
+#include <noncopyable.hpp>
 
 namespace bcf
 {
+class IProtocolBuilder;
 class IProtocolParser;
 class RequestHandler;
-class BCF_EXPORT RequestHandlerBuilder
+class BCF_EXPORT RequestHandlerBuilder: public bcf::NonCopyable
 {
 public:
     RequestHandlerBuilder();
@@ -17,21 +19,10 @@ public:
     friend class RequestHandler;
     RequestHandlerBuilder& withTimeOut(int timeoutMillSeconds);
 
-    RequestHandlerBuilder& withTcpAddr(const std::string& ip, int port);
-
-    RequestHandlerBuilder& withSerialPortPortName(const std::string& name);
-
-    RequestHandlerBuilder& withSerialPortBaudRate(BaudRate baudRate);
-
-    RequestHandlerBuilder& withSerialPortDataBits(DataBits dataBits);
-
-    RequestHandlerBuilder& withSerialPortParity(Parity parity);
-
-    RequestHandlerBuilder& withSerialPortStopBits(StopBits stopBits);
-
-    RequestHandlerBuilder& withSerialPortFlowControl(FlowControl flowControl);
-
     RequestHandlerBuilder& withAbandonCallback(bcf::AbandonCallback&& callback);
+
+    RequestHandlerBuilder& withProtocolBuilders(
+        const std::vector<std::shared_ptr<bcf::IProtocolBuilder>>& protocolBuilders);
 
     RequestHandlerBuilder& withProtocolParsers(
         const std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers);
@@ -44,18 +35,18 @@ public:
 
     RequestHandlerBuilder& withReceiveData(ReceiveCallback&&);
 
-    std::shared_ptr<RequestHandler> asyncConnect();
+    std::shared_ptr<RequestHandler> connect();
 
 private:
     std::shared_ptr<RequestHandler> m_requestHandler;
 };
 
-class RequestHandler
+class BCF_EXPORT RequestHandler: public bcf::NonCopyable
 {
 public:
     RequestHandler();
     ~RequestHandler();
-    void request(std::shared_ptr<bcf::AbstractProtocolModel> model, std::shared_ptr<RequestCallback>);
+    void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback&&);
 
 private:
     friend class RequestHandlerBuilder;

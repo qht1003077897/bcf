@@ -22,6 +22,36 @@ SerialChannel::~SerialChannel()
     pSerialPort = nullptr;
 }
 
+void SerialChannel::setPortName(const std::string& name)
+{
+    pSerialPort->setPortName(QString::fromStdString(name));
+}
+
+void SerialChannel::setBaudRate(QSerialPort::BaudRate baudRate)
+{
+    pSerialPort->setBaudRate(baudRate);
+}
+
+void SerialChannel::setDataBits(QSerialPort::DataBits dataBits)
+{
+    pSerialPort->setDataBits((QSerialPort::DataBits)dataBits);
+}
+
+void SerialChannel::setParity(QSerialPort::Parity parity)
+{
+    pSerialPort->setParity((QSerialPort::Parity)parity);
+}
+
+void SerialChannel::setStopBits(QSerialPort::StopBits stopBits)
+{
+    pSerialPort->setStopBits((QSerialPort::StopBits)stopBits);
+}
+
+void SerialChannel::setFlowControl(QSerialPort::FlowControl flowControl)
+{
+    pSerialPort->setFlowControl((QSerialPort::FlowControl)flowControl);
+}
+
 bcf::ChannelID SerialChannel::channelID()
 {
     return bcf::ChannelID::Serial;

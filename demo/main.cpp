@@ -1,5 +1,4 @@
-﻿#include <iostream>
-#include <abstractprotocolmodel.h>
+﻿#include <abstractprotocolmodel.h>
 #include "aprotocolbuilder.h"
 #include "requesthandler.h"
 #include "serialchannel.h"
@@ -8,24 +7,35 @@ using namespace std;
 
 int main(int argc, char* argv[])
 {
-    QCoreApplication app(argc, argv);
-    std::shared_ptr<bcf::RequestHandler> request
-        = bcf::RequestHandlerBuilder()
-          .withTimeOut(100'000)
-          .withProtocolParsers({std::make_shared<AProtocolParser>()})
-    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
-        cout << "protocolType:" << model->protocolType() << endl;
-    })
-    .withChannel(bcf::ChannelID::Serial, []() {
-        return std::make_shared<bcf::SerialChannel>();
-    })
-    .withSerialPortPortName("COM2")
-    .withReceiveData([](bcf::ErrorCode code, std::shared_ptr<bcf::AbstractProtocolModel> model) {
-        cout << "code:" << code << endl;
-        cout << "protocolType:" << model->protocolType() << endl;
-    })
-    .asyncConnect();
 
-//    request->request();
+    setbuf(stdout, NULL);
+
+    QCoreApplication app(argc, argv);
+
+    auto requestPtr = bcf::RequestHandlerBuilder()
+                      .withTimeOut(10'000)
+                      .withProtocolBuilders({std::make_shared<AProtocolBuilder>()})
+                      .withProtocolParsers({std::make_shared<AProtocolParser>()})
+    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
+    .withChannel(bcf::ChannelID::Serial, []() {
+        auto channel = std::make_shared<bcf::SerialChannel>();
+        channel->setPortName("COM2");
+        return channel;
+    })
+    .withReceiveData([](bcf::ErrorCode code, std::shared_ptr<bcf::AbstractProtocolModel> model) {
+        printf(  "code:%d \n", code);
+        printf(  "protocolType:%d \n", model->protocolType());
+    })
+    .connect();
+
+    std::shared_ptr<bcf::AbstractProtocolModel> reqmodel = std::make_shared<bcf::AProtocolModel>();
+    reqmodel->seq = 1;
+    requestPtr->request(reqmodel, [](bcf::ErrorCode code,
+    std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
+        printf( "retmodel code:%d,\n", code) ;
+        if (retmodel) {
+            printf( "retmodel seq:%d,\n", retmodel->seq) ;
+        }
+    });
     return app.exec();
 }

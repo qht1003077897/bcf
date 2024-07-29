@@ -5,10 +5,10 @@
 #include <map>
 #include <bcfexport.h>
 #include <ichannel.h>
-
+#include <noncopyable.hpp>
 namespace bcf
 {
-class BCF_EXPORT ChannelManager
+class BCF_EXPORT ChannelManager: public bcf::NonCopyable
 {
 public:
     void registerChannel(bcf::ChannelID type, CreateChannelFunc func);

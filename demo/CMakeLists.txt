@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.5)
 
-project(bcf LANGUAGES CXX)
+project(bcfDemo LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -12,15 +12,8 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core SerialPort)
 
 add_definitions(-DUSE_BCF_SERIALPORT)
 
-add_executable(bcf
+add_executable(bcfDemo
     main.cpp
-    aprotocolbuilder.h
-    aprotocolbuilder.cpp)
+    aprotocolbuilder.h)
 
-target_link_libraries(bcf PRIVATE bcfcore Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::SerialPort)
-
-include(GNUInstallDirs)
-install(TARGETS bcf
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-)
+target_link_libraries(bcfDemo PRIVATE bcfcore Qt${QT_VERSION_MAJOR}::Core Qt${QT_VERSION_MAJOR}::SerialPort)

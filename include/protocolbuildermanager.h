@@ -5,15 +5,12 @@
 #include <bcfexport.h>
 #include <abstractprotocolmodel.h>
 #include <iprotocolbuilder.h>
+#include <noncopyable.hpp>
 
 namespace bcf
 {
-class BCF_EXPORT ProtocolBuilderManager
+class BCF_EXPORT ProtocolBuilderManager: public bcf::NonCopyable
 {
-
-public:
-    static ProtocolBuilderManager& getInstance();
-
 public:
     void addBuilder(std::shared_ptr<IProtocolBuilder> newBuilder);
     std::string build(bcf::ProtocolType id, std::shared_ptr<AbstractProtocolModel> model);

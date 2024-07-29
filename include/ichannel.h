@@ -21,10 +21,8 @@ using ConnectionCompletedCallback = std::function<void(std::shared_ptr<bcf::ICha
 using ConnectionFailCallback = std::function<void()>;
 
 enum ChannelID {
-    Begin = 0x01,
-    Serial = Begin,
-    TCP = 0x02,
-    End = TCP
+    Serial = 0x01,
+    TCP = 0x02
 };
 
 enum class ChannelState {
@@ -34,24 +32,8 @@ enum class ChannelState {
     Error,
 };
 
-struct TCPConnectOption {
-    std::string ip;
-    int port = 0;
-};
-
-struct SerialPortConnectOption {
-    std::string portName;
-    BaudRate baudRate = BaudRate::Baud115200;
-    DataBits dataBits = DataBits::Data8;
-    Parity parity = Parity::NoParity;
-    StopBits stopBits = StopBits::OneStop;
-    FlowControl flowControl = FlowControl::NoFlowControl;
-};
-
 struct ConnectOption {
-    TCPConnectOption m_TCPConnectOption;
-    SerialPortConnectOption m_SerialPortConnectOption;
-    int m_timeoutMillSeconds = 10'000;
+    int32_t m_timeoutMillSeconds = 10'000;//ms
     bcf::ChannelID m_channelid;
     bcf::ConnectionFailCallback m_FailCallback;
     bcf::ConnectionCompletedCallback m_CompleteCallback;
@@ -104,12 +86,11 @@ protected:
     ErrorCallback m_errorCallback;
 
 private:
-    std::deque<std::string> m_dataQueue;
+    std::deque<std::string> m_Queue;
     std::atomic_bool m_isexit;
-    std::mutex m_mtx;
-    std::mutex m_mtxuserdata;
-    std::condition_variable m_cv;
-    std::thread m_usercallbackthread;
+    std::mutex m_QueueMtx;
+    std::condition_variable m_QueueCV;
+    std::shared_ptr<std::thread> m_usercallbackthread;
 
     bcf::ChannelState m_state = ChannelState::Idel;
 

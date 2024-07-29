@@ -18,6 +18,19 @@ public:
     explicit SerialChannel(QObject* parent = nullptr);
     virtual ~SerialChannel();
 
+    void setPortName(const std::string& name);
+
+    void setBaudRate(QSerialPort::BaudRate baudRate);
+
+    void setDataBits(QSerialPort::DataBits dataBits);
+
+    void setParity(QSerialPort::Parity parity);
+
+    void setStopBits(QSerialPort::StopBits stopBits);
+
+    void setFlowControl(QSerialPort::FlowControl flowControl);
+
+
 private slots:
     void onReceivedData();
     void onErrorOccurred(QSerialPort::SerialPortError error);

@@ -1,13 +1,6 @@
 ﻿#include "protocolbuildermanager.h"
 using namespace bcf;
 
-ProtocolBuilderManager& ProtocolBuilderManager::getInstance()
-{
-    static ProtocolBuilderManager instance;
-    return instance;
-}
-
-
 void ProtocolBuilderManager::addBuilder(std::shared_ptr<IProtocolBuilder> newBuilder)
 {
     if (newBuilder) {

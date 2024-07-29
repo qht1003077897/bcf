@@ -10,6 +10,7 @@ class RequestHandler::RequestHandlerPrivate
 public:
     RequestHandlerPrivate()
         : protocolParserManager(std::make_unique<bcf::ProtocolParserManager>())
+        , protocolBuilderManager(std::make_unique<bcf::ProtocolBuilderManager>())
         , m_channelManager(std::make_unique<bcf::ChannelManager>())
     {
         startTimeOut();
@@ -18,11 +19,12 @@ public:
     {
         m_isexit = true;
     };
-    void request(std::shared_ptr<bcf::AbstractProtocolModel> model,
-                 std::shared_ptr<bcf::RequestCallback> callback);
+    void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback callback);
 private:
     void startTimeOut();
     void setAbandonCallback(bcf::AbandonCallback && callback);
+    void setProtocolBuilders(const
+                             std::vector<std::shared_ptr<bcf::IProtocolBuilder>>& protocolBuilders);
     void setProtocolParsers(const
                             std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers);
     void receive(bcf::ReceiveCallback&& _callback);
@@ -32,11 +34,12 @@ private:
     friend class RequestHandlerBuilder;
     std::atomic_bool m_isexit;
     std::mutex m_mtx;
-    //key:channelID,key:seq,key:timeout
-    std::map<int, std::pair<int, std::shared_ptr<bcf::RequestCallback>>> callbacks;
+    //key:seq,key:timeout
+    std::map<int, std::pair<int32_t, bcf::RequestCallback>> callbacks;
     bcf::AbandonCallback m_abandonCallback;
     std::vector<bcf::ProtocolType> m_protocolTypes;
     std::unique_ptr<bcf::ProtocolParserManager> protocolParserManager;
+    std::unique_ptr<bcf::ProtocolBuilderManager> protocolBuilderManager;
     std::unique_ptr<bcf::ChannelManager> m_channelManager;
     ConnectOption m_ConnectOption;
 };
@@ -50,52 +53,16 @@ RequestHandlerBuilder& RequestHandlerBuilder::withTimeOut(int timeoutMillSeconds
     return *this;
 }
 
-RequestHandlerBuilder& RequestHandlerBuilder::withTcpAddr(const std::string& ip, int port)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_TCPConnectOption.ip = ip;
-    m_requestHandler->d_ptr->m_ConnectOption.m_TCPConnectOption.port = port;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withSerialPortPortName(const std::string& name)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_SerialPortConnectOption.portName = name;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withSerialPortBaudRate(BaudRate baudRate)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_SerialPortConnectOption.baudRate = baudRate;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withSerialPortDataBits(DataBits dataBits)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_SerialPortConnectOption.dataBits = dataBits;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withSerialPortParity(Parity parity)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_SerialPortConnectOption.parity = parity;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withSerialPortStopBits(StopBits stopBits)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_SerialPortConnectOption.stopBits = stopBits;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withSerialPortFlowControl(FlowControl flowControl)
-{
-    m_requestHandler->d_ptr->m_ConnectOption.m_SerialPortConnectOption.flowControl = flowControl;
-    return *this;
-}
-
 RequestHandlerBuilder& RequestHandlerBuilder::withAbandonCallback(bcf::AbandonCallback&& callback)
 {
     m_requestHandler->d_ptr->setAbandonCallback(std::move(callback));
+    return *this;
+}
+
+RequestHandlerBuilder& RequestHandlerBuilder::withProtocolBuilders(const
+                                                                   std::vector<std::shared_ptr<IProtocolBuilder> >& protocolBuilders)
+{
+    m_requestHandler->d_ptr->setProtocolBuilders(protocolBuilders);
     return *this;
 }
 
@@ -133,7 +100,7 @@ RequestHandlerBuilder& RequestHandlerBuilder::withReceiveData(ReceiveCallback&& 
     return *this;
 }
 
-std::shared_ptr<RequestHandler> RequestHandlerBuilder::asyncConnect()
+std::shared_ptr<RequestHandler> RequestHandlerBuilder::connect()
 {
     m_requestHandler->d_ptr->asyncConnect();
     return m_requestHandler;
@@ -150,30 +117,25 @@ RequestHandler::~RequestHandler()
 }
 
 void RequestHandler::request(std::shared_ptr<bcf::AbstractProtocolModel> model,
-                             std::shared_ptr<RequestCallback> callback)
+                             RequestCallback&& callback)
 {
     d_ptr->request(model, std::move(callback));
 }
 
 void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::AbstractProtocolModel>
                                                     model,
-                                                    std::shared_ptr<RequestCallback> callback)
+                                                    RequestCallback callback)
 {
     const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
     if (nullptr == channel || !channel->isOpen()) {
         printf("error,channel is not open");
-        (*callback)(bcf::ErrorCode::CHANNEL_CLOSE, nullptr);
+        (callback)(bcf::ErrorCode::CHANNEL_CLOSE, nullptr);
         return;
     }
 
-    std::string res = ProtocolBuilderManager::getInstance().build(model->protocolType(), model);
+    std::string res = protocolBuilderManager->build(model->protocolType(), model);
     {
         std::unique_lock<std::mutex> l(m_mtx);
-        if (callbacks.find(channel->channelID()) == callbacks.end()) {
-            std::pair<int, std::shared_ptr<RequestCallback>> seqs;
-            callbacks.emplace(channel->channelID(), seqs);
-        }
-
         callbacks.insert(std::make_pair(model->seq,
                                         std::make_pair(m_ConnectOption.m_timeoutMillSeconds,
                                                        std::move(callback))));
@@ -185,7 +147,7 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
 ////如果能匹配到seq,则直接callback,如果匹配不到,则是主动上报的,交给receive调用点进行转发处理
 void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
 {
-    DataCallback call =  [ =, tmpCallback = std::move(_callback)](const std::string dataStr) {
+    DataCallback call =  [ =, tmpCallback = std::move(_callback)](const std::string & dataStr) {
 
         protocolParserManager->parseByAll(dataStr, [ = ](bcf::IProtocolParser::ParserState
                                                          state,
@@ -206,14 +168,14 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
                 const auto& itr = callbacks.find(key);
                 if (itr != callbacks.end()) {
                     if (nullptr != itr->second.second) {
-                        std::bind(*(itr->second.second), bcf::ErrorCode::OK, model)();
+                        itr->second.second(bcf::ErrorCode::OK, model);
                     }
                     callbacks.erase(itr);
                     return;
                 }
             }
 
-            printf("not find seq,print to logWidget");
+            printf("not find seq,print to logWidget \n");
             tmpCallback(bcf::ErrorCode::UNOWNED_DATA, model);
         });
     };
@@ -227,6 +189,15 @@ void RequestHandler::RequestHandlerPrivate::setAbandonCallback(AbandonCallback &
 {
     m_abandonCallback = std::move(callback);
 }
+
+void RequestHandler::RequestHandlerPrivate::setProtocolBuilders(const
+                                                                std::vector<std::shared_ptr<bcf::IProtocolBuilder>>& protocolBuilders)
+{
+    for (const auto& p : protocolBuilders) {
+        protocolBuilderManager->addBuilder(std::move(p));
+    }
+}
+
 
 void RequestHandler::RequestHandlerPrivate::setProtocolParsers(const
                                                                std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers)
@@ -249,21 +220,22 @@ void RequestHandler::RequestHandlerPrivate::startTimeOut()
 {
     auto timeOutThread = std::thread([this]() {
         while (!m_isexit) {
-            std::unique_lock<std::mutex> l(m_mtx);
-            auto it  = callbacks.begin();
-            while (it != callbacks.end()) {
+            {
+                std::unique_lock<std::mutex> l(m_mtx);
+                auto it  = callbacks.begin();
+                while (it != callbacks.end()) {
+                    if ( 0 == it->second.first) {
+                        //超时时间减到0
+                        printf("seq: %d timeout,remove it!,\n", it->first);
+                        std::bind(it->second.second, bcf::ErrorCode::TIME_OUT, nullptr)();
+                        callbacks.erase(it++);
+                        continue;
+                    }
 
-                if ( 0 == it->second.first) {
-                    //超时时间减到0
-                    printf("seq: %d timeout,remove it!", it->first);
-                    std::bind(*(it->second.second), bcf::ErrorCode::TIME_OUT, nullptr)();
-                    callbacks.erase(it++);
-                    continue;
+                    //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
+                    it->second.first = std::max(0,  it->second.first - 1000);
+                    it++;
                 }
-
-                //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
-                it->second.first = std::max(0,  it->second.first - 1000);
-                it++;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }

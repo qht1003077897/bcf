@@ -19,7 +19,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 FILE(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
 
 # Header files.
-FILE(GLOB_RECURSE HEADERS "${CMAKE_SOURCE_DIR}/include/*.h")
+FILE(GLOB_RECURSE HEADERS "${CMAKE_SOURCE_DIR}/include/*.h" "${CMAKE_SOURCE_DIR}/include/*.hpp")
 
 if(USE_BCF_SERIALPORT)
     add_definitions(-DUSE_BCF_SERIALPORT)
