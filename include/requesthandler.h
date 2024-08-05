@@ -19,6 +19,8 @@ public:
     friend class RequestHandler;
     RequestHandlerBuilder& withTimeOut(int timeoutMillSeconds);
 
+    RequestHandlerBuilder& useBigEndian(bool ussbigendian = true);
+
     RequestHandlerBuilder& withAbandonCallback(bcf::AbandonCallback&& callback);
 
     RequestHandlerBuilder& withProtocolBuilders(

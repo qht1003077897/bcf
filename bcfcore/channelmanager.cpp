@@ -43,6 +43,11 @@ void ChannelManager::registerChannel(int type, CreateChannelFunc func)
 
 std::shared_ptr<bcf::IChannel> ChannelManager::CreateChannel(int id)
 {
+    std::shared_ptr<IChannel> ch = getChannel(id);
+    if (nullptr != ch) {
+        return ch;
+    }
+
     auto it = channelCreators.find(id);
     if (it != channelCreators.end()) {
         std::shared_ptr<bcf::IChannel> channel =  it->second();

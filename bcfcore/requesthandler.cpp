@@ -1,6 +1,7 @@
 ﻿#include "requesthandler.h"
 #include <channelmanager.h>
 #include <globaldefine.h>
+#include <QDebug>
 #include <protocolbuildermanager.h>
 #include <protocolparsermanager.h>
 using namespace bcf;
@@ -37,7 +38,6 @@ private:
     //key:seq,key:timeout
     std::map<int, std::pair<int32_t, bcf::RequestCallback>> callbacks;
     bcf::AbandonCallback m_abandonCallback;
-    std::vector<bcf::ProtocolType> m_protocolTypes;
     std::unique_ptr<bcf::ProtocolParserManager> protocolParserManager;
     std::unique_ptr<bcf::ProtocolBuilderManager> protocolBuilderManager;
     std::unique_ptr<bcf::ChannelManager> m_channelManager;
@@ -50,6 +50,12 @@ RequestHandlerBuilder::RequestHandlerBuilder()
 RequestHandlerBuilder& RequestHandlerBuilder::withTimeOut(int timeoutMillSeconds)
 {
     m_requestHandler->d_ptr->m_ConnectOption.m_timeoutMillSeconds = timeoutMillSeconds;
+    return *this;
+}
+
+RequestHandlerBuilder& RequestHandlerBuilder::useBigEndian(bool ussbigendian)
+{
+    m_requestHandler->d_ptr->m_ConnectOption.m_usebigendian = ussbigendian;
     return *this;
 }
 
@@ -128,34 +134,31 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
 {
     const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
     if (nullptr == channel || !channel->isOpen()) {
-        printf("error,channel is not open");
+        qWarning("error,channel is not open");
         (callback)(bcf::ErrorCode::CHANNEL_CLOSE, nullptr);
         return;
     }
 
-    std::string res = protocolBuilderManager->build(model->protocolType(), model);
+    auto res = protocolBuilderManager->build(model->protocolType(), model);
     {
         std::unique_lock<std::mutex> l(m_mtx);
         callbacks.insert(std::make_pair(model->seq,
                                         std::make_pair(m_ConnectOption.m_timeoutMillSeconds,
                                                        std::move(callback))));
     }
-    channel->send((unsigned char*)res.c_str(), (uint32_t)res.length());
+    channel->send((const unsigned char*)res.constData(), res.length());
 };
 
 ////如何区分是发送回复的还是主动上报的？因此全部都是走receive，receive里面根据业务ID判断转给哪个callback
 ////如果能匹配到seq,则直接callback,如果匹配不到,则是主动上报的,交给receive调用点进行转发处理
 void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
 {
-    DataCallback call =  [ =, tmpCallback = std::move(_callback)](const std::string & dataStr) {
+    DataCallback call =  [ =, tmpCallback = std::move(_callback)](const QByteArray & data) {
 
-        protocolParserManager->parseByAll(dataStr, [ = ](bcf::IProtocolParser::ParserState
-                                                         state,
+        protocolParserManager->parseByAll(data, [ = ](bcf::IProtocolParser::ParserState
+                                                      state,
         std::shared_ptr<bcf::AbstractProtocolModel> model) {
-            if (state == IProtocolParser::WaitingStick) {
-                printf("wait parsing...,state is WaitingStick");
-                return;
-            } else if (state == IProtocolParser::Abandon) {
+            if (state == IProtocolParser::Abandon) {
                 if (nullptr != m_abandonCallback) {
                     m_abandonCallback(model);
                 }
@@ -175,7 +178,7 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
                 }
             }
 
-            printf("not find seq,print to logWidget \n");
+            qDebug("not find seq , ErrorCode::UNOWNED_DATA\n");
             tmpCallback(bcf::ErrorCode::UNOWNED_DATA, model);
         });
     };

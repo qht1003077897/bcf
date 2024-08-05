@@ -4,39 +4,80 @@
 
 namespace bcf
 {
-
-enum ProtocolType {
-    A = 1,
-    B = 2,
-    //...
+//-----------------unpack---------------------------------------------
+enum PackMode {
+    UNPACK_MODE_NONE        = 0,
+    UNPACK_BY_FIXED_LENGTH  = 1,    // Not recommended 定长解包
+    UNPACK_BY_DELIMITER     = 2,    // Suitable for text protocol   分隔符解包
+    UNPACK_BY_LENGTH_FIELD  = 3,    // Suitable for binary protocol head+body
+    UNPACK_BY_USER  = 4,            // 如何扩展: UNPACK_BY_USER,UNPACK_BY_USER+1 UNPACK_BY_USER+2
 };
 
-struct AbstractProtocolModel {
-    uint32_t seq = 1;
-    uint32_t cmd = 0x01;
-    virtual ProtocolType protocolType() = 0;
+#define DEFAULT_PACKAGE_MAX_LENGTH  (1 << 21)   // 2M
+
+// UNPACK_BY_DELIMITER
+#define PACKAGE_MAX_DELIMITER_BYTES 8
+
+// UNPACK_BY_LENGTH_FIELD
+enum PackEndian { //0x1234
+    LITTEL_ENDIAN = 1234,    // 12  34
+    BIG_ENDIAN    = 3412,    // 34  12
 };
 
+class AbstractProtocolModel
+{
+public:
+    uint32_t seq = 0;
+    uint16_t cmd = 0x0001;
+    PackEndian endian = PackEndian::BIG_ENDIAN;
+    virtual PackMode protocolType() = 0;
+};
 
-//e.g.: A、B协议
-struct AProtocolModel : AbstractProtocolModel {
+class ByHeadProtocolModel : public AbstractProtocolModel
+{
+public:
+    /*
+    |************head************|*****body*****|
+    |    seq   |  cmd  | length  |     XXX      |
+    |    4byte | 2byte | 4bytes  | length bytes |
+    |****************************|**************|
+    */
+    uint32_t length = 0;
+    constexpr static uint16_t body_offset = sizeof(seq) + sizeof(cmd) + sizeof(length);
 
-    virtual ProtocolType protocolType() override
+    void setBody(const std::string& body)
     {
-        return ProtocolType::A;
+        m_body = body;
+        length = m_body.length();
+    }
+    const std::string& body()
+    {
+        return m_body;
     };
-    //e.g. json
-    std::string data;
+    virtual PackMode protocolType() override
+    {
+        return PackMode::UNPACK_BY_LENGTH_FIELD;
+    };
+    //e.g. json or std::string
+private:
+    std::string m_body;
 };
 
-struct BProtocolModel : AbstractProtocolModel {
+class ByDelimiterProtocolModel : public AbstractProtocolModel
+{
 
-    virtual ProtocolType protocolType() override
+    virtual PackMode protocolType() override
     {
-        return ProtocolType::B;
+        return PackMode::UNPACK_BY_DELIMITER;
     };
+};
 
-    uint32_t ack = 0x00;
-    uint32_t end = 0x00;
+class ByFixedProtocolModel : AbstractProtocolModel
+{
+
+    virtual PackMode protocolType() override
+    {
+        return PackMode::UNPACK_BY_FIXED_LENGTH;
+    };
 };
 }

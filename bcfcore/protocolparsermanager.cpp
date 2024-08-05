@@ -8,7 +8,7 @@ void ProtocolParserManager::addParser(const std::shared_ptr<IProtocolParser>& pa
     }
 }
 
-std::shared_ptr<IProtocolParser> ProtocolParserManager::findParse(ProtocolType id)
+std::shared_ptr<IProtocolParser> ProtocolParserManager::findParse(PackMode id)
 {
     const auto itr = parsers.find(id);
     if (itr == parsers.end()) {
@@ -19,18 +19,20 @@ std::shared_ptr<IProtocolParser> ProtocolParserManager::findParse(ProtocolType i
 }
 
 
-void ProtocolParserManager::parseByID(bcf::ProtocolType id, const std::string& data,
+void ProtocolParserManager::parseByID(bcf::PackMode id, const QByteArray& data,
                                       std::function<void(IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>& model)>
                                       _callback)
 {
     const auto itr = parsers.find(id);
-    if (itr != parsers.end()) {
-        const auto& parser = itr->second;
-        parser->parse(data, _callback);
+    if (itr == parsers.end()) {
+        return;
     }
+
+    const auto& parser = itr->second;
+    parser->parse(data, _callback);
 }
 
-void ProtocolParserManager::parseByAll(const std::string& data,
+void ProtocolParserManager::parseByAll(const QByteArray& data,
                                        std::function<void (IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>&)>
                                        _callback)
 {

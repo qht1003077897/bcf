@@ -50,7 +50,7 @@ void IChannel::setConnectionCompletedCallback(ConnectionCompletedCallback &&call
     m_CompleteCallback = std::move(callback);
 }
 
-void IChannel::pushData2Bcf(const std::string& data)
+void IChannel::pushData2Bcf(const QByteArray& data)
 {
     pushqueueAndNotify(data);
 }
@@ -102,16 +102,16 @@ void IChannel::stopUserCallbackThread()
     m_usercallbackthread = nullptr;
 }
 
-void IChannel::pushqueueAndNotify(const std::string& data)
+void IChannel::pushqueueAndNotify(const QByteArray& data)
 {
     std::lock_guard<std::mutex> l(m_QueueMtx);
     m_Queue.emplace_back(data);
     m_QueueCV.notify_all();
 }
 
-std::deque<std::string> IChannel::popall()
+std::deque<QByteArray> IChannel::popall()
 {
-    std::deque<std::string> userqueue;
+    std::deque<QByteArray> userqueue;
     std::unique_lock<std::mutex> l(m_QueueMtx, std::try_to_lock);
     std::swap(userqueue, m_Queue);
     return userqueue;

@@ -8,8 +8,8 @@ void ProtocolBuilderManager::addBuilder(std::shared_ptr<IProtocolBuilder> newBui
     }
 }
 
-std::string ProtocolBuilderManager::build(bcf::ProtocolType id,
-                                          std::shared_ptr<AbstractProtocolModel> model)
+QByteArray ProtocolBuilderManager::build(bcf::PackMode id,
+                                         std::shared_ptr<AbstractProtocolModel> model)
 {
     const auto _build = builders.find(id);
     if (_build == builders.end()) {

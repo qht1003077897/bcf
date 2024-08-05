@@ -1,15 +1,13 @@
-﻿#pragma once
-#ifdef USE_BCF_SERIALPORT
-
+﻿#ifdef BCF_USE_SERIALPORT
+#pragma once
 #include <QObject>
-#include <QSerialPort>
 #include <ichannel.h>
 #include <bcfexport.h>
 #include <globaldefine.h>
 
+class QSerialPort;
 namespace bcf
 {
-constexpr int CHANNEL_ID_SERIALPORT = 0;
 class BCF_EXPORT SerialChannel : public QObject, public IChannel
 {
     Q_OBJECT
@@ -20,20 +18,20 @@ public:
 
     void setPortName(const std::string& name);
 
-    void setBaudRate(QSerialPort::BaudRate baudRate);
+    void setBaudRate(int baudRate);
 
-    void setDataBits(QSerialPort::DataBits dataBits);
+    void setDataBits(int dataBits);
 
-    void setParity(QSerialPort::Parity parity);
+    void setParity(int parity);
 
-    void setStopBits(QSerialPort::StopBits stopBits);
+    void setStopBits(int stopBits);
 
-    void setFlowControl(QSerialPort::FlowControl flowControl);
+    void setFlowControl(int flowControl);
 
 
 private slots:
     void onReceivedData();
-    void onErrorOccurred(QSerialPort::SerialPortError error);
+    void onErrorOccurred(int error);
 
 protected:
     virtual bool openInternal() override;
@@ -43,10 +41,9 @@ protected:
     virtual uint32_t read(uint8_t* buff, uint32_t len) override;
     virtual uint32_t write(uint8_t* buff, uint32_t len) override;
 
-    virtual uint32_t readAll(char* buff) override;
+    virtual QByteArray readAll() override;
 private:
-    bool bReadyReadConnected = true;
-    QSerialPort* pSerialPort = nullptr;
+    QSerialPort* m_pSerialPort = nullptr;
 };
-}
-#endif
+}       // namespace bcf
+#endif  //BCF_USE_SERIALPORT
