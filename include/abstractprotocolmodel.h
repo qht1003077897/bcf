@@ -1,5 +1,5 @@
 ﻿#pragma once
-
+#include <base/platform.hpp>
 #include <string>
 
 namespace bcf
@@ -19,9 +19,11 @@ enum PackMode {
 #define PACKAGE_MAX_DELIMITER_BYTES 8
 
 // UNPACK_BY_LENGTH_FIELD
-enum PackEndian { //0x1234
-    LITTEL_ENDIAN = 1234,    // 12  34
-    BIG_ENDIAN    = 3412,    // 34  12
+enum PackEndian {
+    USE_HOST_ENDIAN = BYTE_ORDER,
+    USE_LITTEL_ENDIAN = LITTLE_ENDIAN,
+    USE_BIG_ENDIAN    = BIG_ENDIAN,
+    USE_NET_ENDIAN = USE_BIG_ENDIAN,
 };
 
 class AbstractProtocolModel
@@ -29,7 +31,7 @@ class AbstractProtocolModel
 public:
     uint32_t seq = 0;
     uint16_t cmd = 0x0001;
-    PackEndian endian = PackEndian::BIG_ENDIAN;
+    PackEndian endian = PackEndian::USE_NET_ENDIAN;
     virtual PackMode protocolType() = 0;
 };
 

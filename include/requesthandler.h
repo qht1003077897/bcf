@@ -3,7 +3,7 @@
 #include <vector>
 #include <ichannel.h>
 #include <bcfexport.h>
-#include <noncopyable.hpp>
+#include <base/noncopyable.hpp>
 
 namespace bcf
 {
@@ -19,7 +19,7 @@ public:
     friend class RequestHandler;
     RequestHandlerBuilder& withTimeOut(int timeoutMillSeconds);
 
-    RequestHandlerBuilder& useBigEndian(bool ussbigendian = true);
+    RequestHandlerBuilder& withMaxRecvBufferSize(int maxRecvBufferSize);
 
     RequestHandlerBuilder& withAbandonCallback(bcf::AbandonCallback&& callback);
 

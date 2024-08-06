@@ -19,7 +19,8 @@ std::shared_ptr<IProtocolParser> ProtocolParserManager::findParse(PackMode id)
 }
 
 
-void ProtocolParserManager::parseByID(bcf::PackMode id, const QByteArray& data,
+void ProtocolParserManager::parseByID(bcf::PackMode id,
+                                      const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
                                       std::function<void(IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>& model)>
                                       _callback)
 {
@@ -29,10 +30,10 @@ void ProtocolParserManager::parseByID(bcf::PackMode id, const QByteArray& data,
     }
 
     const auto& parser = itr->second;
-    parser->parse(data, _callback);
+    parser->parse(byteBufferPtr, _callback);
 }
 
-void ProtocolParserManager::parseByAll(const QByteArray& data,
+void ProtocolParserManager::parseByAll(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
                                        std::function<void (IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>&)>
                                        _callback)
 {
@@ -40,7 +41,7 @@ void ProtocolParserManager::parseByAll(const QByteArray& data,
     std::shared_ptr<AbstractProtocolModel> model;
     for (auto& p : parsers) {
         auto& parser = p.second;
-        parser->parse(data, [&](IProtocolParser::ParserState _state,
+        parser->parse(byteBufferPtr, [&](IProtocolParser::ParserState _state,
         std::shared_ptr<AbstractProtocolModel> _model) {
             state = _state;
             model = _model;

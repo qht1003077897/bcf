@@ -1,6 +1,6 @@
 ﻿#include <ichannel.h>
-#include <globaldefine.h>
-#include <exception.hpp>
+#include <base/globaldefine.h>
+#include <base/exception.hpp>
 using namespace bcf;
 
 IChannel::~IChannel()
@@ -29,7 +29,7 @@ void IChannel::close()
     stopUserCallbackThread();
 }
 
-void IChannel::setDataCallback(DataCallback && dataDallback)
+void IChannel::setDataCallback(DataCallback&& dataDallback)
 {
     std::unique_lock<std::mutex> l(m_QueueMtx);
     m_dataCallback = std::move(dataDallback);
@@ -50,9 +50,9 @@ void IChannel::setConnectionCompletedCallback(ConnectionCompletedCallback &&call
     m_CompleteCallback = std::move(callback);
 }
 
-void IChannel::pushData2Bcf(const QByteArray& data)
+void IChannel::pushData2Bcf(ByteBufferPtr&& data)
 {
-    pushqueueAndNotify(data);
+    pushqueueAndNotify(std::move(data));
 }
 
 void IChannel::startUserCallbackThread()
@@ -102,16 +102,16 @@ void IChannel::stopUserCallbackThread()
     m_usercallbackthread = nullptr;
 }
 
-void IChannel::pushqueueAndNotify(const QByteArray& data)
+void IChannel::pushqueueAndNotify(ByteBufferPtr&& data)
 {
     std::lock_guard<std::mutex> l(m_QueueMtx);
-    m_Queue.emplace_back(data);
+    m_Queue.emplace_back(std::move(data));
     m_QueueCV.notify_all();
 }
 
-std::deque<QByteArray> IChannel::popall()
+std::deque<ByteBufferPtr> IChannel::popall()
 {
-    std::deque<QByteArray> userqueue;
+    std::deque<ByteBufferPtr> userqueue;
     std::unique_lock<std::mutex> l(m_QueueMtx, std::try_to_lock);
     std::swap(userqueue, m_Queue);
     return userqueue;

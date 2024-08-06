@@ -2,7 +2,7 @@
 
 #include <functional>
 #include <memory>
-#include <QByteArray>
+#include <base/bytebuffer.hpp>
 #include <abstractprotocolmodel.h>
 namespace bcf
 {
@@ -18,7 +18,7 @@ public:
     virtual ~IProtocolParser() = default;
     virtual bcf::PackMode getType() const = 0;
     //使用者自己实现parse函数，通过回调返回parser好的数据和parser状态
-    virtual void parse(const QByteArray& data,
+    virtual void parse(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
                        const std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel> model)>&) = 0;
 };
 }

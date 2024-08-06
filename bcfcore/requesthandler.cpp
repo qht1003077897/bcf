@@ -1,9 +1,8 @@
-﻿#include "requesthandler.h"
-#include <channelmanager.h>
-#include <globaldefine.h>
-#include <QDebug>
+﻿#include <channelmanager.h>
+#include <base/globaldefine.h>
 #include <protocolbuildermanager.h>
 #include <protocolparsermanager.h>
+#include "requesthandler.h"
 using namespace bcf;
 
 class RequestHandler::RequestHandlerPrivate
@@ -53,9 +52,9 @@ RequestHandlerBuilder& RequestHandlerBuilder::withTimeOut(int timeoutMillSeconds
     return *this;
 }
 
-RequestHandlerBuilder& RequestHandlerBuilder::useBigEndian(bool ussbigendian)
+RequestHandlerBuilder& RequestHandlerBuilder::withMaxRecvBufferSize(int maxRecvBufferSize)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_usebigendian = ussbigendian;
+    m_requestHandler->d_ptr->m_ConnectOption.m_maxRecvBufferSize = maxRecvBufferSize;
     return *this;
 }
 
@@ -127,14 +126,14 @@ void RequestHandler::request(std::shared_ptr<bcf::AbstractProtocolModel> model,
 {
     d_ptr->request(model, std::move(callback));
 }
-
+#include "base/platform.hpp"
 void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::AbstractProtocolModel>
                                                     model,
                                                     RequestCallback callback)
 {
     const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
     if (nullptr == channel || !channel->isOpen()) {
-        qWarning("error,channel is not open");
+        std::cerr << "error,channel is not open" << std::endl;
         (callback)(bcf::ErrorCode::CHANNEL_CLOSE, nullptr);
         return;
     }
@@ -146,14 +145,18 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
                                         std::make_pair(m_ConnectOption.m_timeoutMillSeconds,
                                                        std::move(callback))));
     }
-    channel->send((const unsigned char*)res.constData(), res.length());
+
+    auto buf = std::make_unique<uint8_t[]>(res->size());
+    res->getBytes(buf.get(), res->size());
+    channel->send((const char*)buf.get(), res->size());
 };
 
 ////如何区分是发送回复的还是主动上报的？因此全部都是走receive，receive里面根据业务ID判断转给哪个callback
 ////如果能匹配到seq,则直接callback,如果匹配不到,则是主动上报的,交给receive调用点进行转发处理
 void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
 {
-    DataCallback call =  [ =, tmpCallback = std::move(_callback)](const QByteArray & data) {
+    DataCallback call =  [ =, tmpCallback = std::move(_callback)](std::shared_ptr<bb::ByteBuffer>
+    data) {
 
         protocolParserManager->parseByAll(data, [ = ](bcf::IProtocolParser::ParserState
                                                       state,
@@ -162,6 +165,10 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
                 if (nullptr != m_abandonCallback) {
                     m_abandonCallback(model);
                 }
+                return;
+            }
+
+            if (nullptr == model) {
                 return;
             }
 
@@ -178,7 +185,7 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
                 }
             }
 
-            qDebug("not find seq , ErrorCode::UNOWNED_DATA\n");
+            std::cout << "not find seq , ErrorCode::UNOWNED_DATA" << std::endl;
             tmpCallback(bcf::ErrorCode::UNOWNED_DATA, model);
         });
     };
@@ -213,6 +220,7 @@ void RequestHandler::RequestHandlerPrivate::setProtocolParsers(const
 void RequestHandler::RequestHandlerPrivate::connect()
 {
     auto channel =  m_channelManager->CreateChannel(m_ConnectOption.m_channelid);
+    channel->setMaxRecvBufferSize(m_ConnectOption.m_maxRecvBufferSize);
     channel->setFailedCallback(std::move(m_ConnectOption.m_FailCallback));
     channel->setConnectionCompletedCallback(std::move(m_ConnectOption.m_CompleteCallback));
     if (nullptr != channel) {
@@ -231,7 +239,8 @@ void RequestHandler::RequestHandlerPrivate::startTimeOut()
                 while (it != callbacks.end()) {
                     if ( 0 == it->second.first) {
                         //超时时间减到0
-                        printf("seq: %d timeout,remove it!,\n", it->first);
+
+                        std::cout << "seq: " << it->first << "%d timeout,remove it!" << std::endl;
                         std::bind(it->second.second, bcf::ErrorCode::TIME_OUT, nullptr)();
                         callbacks.erase(it++);
                         continue;

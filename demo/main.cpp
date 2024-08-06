@@ -24,9 +24,10 @@ protected:
     {
         return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
     };
-    virtual QByteArray build(std::shared_ptr<bcf::AbstractProtocolModel> _model) override
+    virtual std::shared_ptr<bb::ByteBuffer> build(std::shared_ptr<bcf::AbstractProtocolModel> _model)
+    override
     {
-        return "";
+        return nullptr;
     };
 };
 
@@ -37,7 +38,7 @@ public:
     {
         return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
     };
-    virtual void parse(const QByteArray& data,
+    virtual void parse(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
                        const std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel>)>& callback)
     override
     {

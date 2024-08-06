@@ -1,6 +1,4 @@
 ﻿#pragma once
-#pragma warning(push)
-#pragma warning(disable: 4251)
 
 #include <functional>
 #include <string>
@@ -8,19 +6,20 @@
 #include <mutex>
 #include <map>
 #include <deque>
-#include <QByteArray>
 #include <bcfexport.h>
-#include <globaldefine.h>
+#include <base/bytebuffer.hpp>
+#include <base/globaldefine.h>
 
 namespace bcf
 {
 class IChannel;
-using DataCallback = std::function<void(const QByteArray&)>;
-using ErrorCallback = std::function<void(const QString&)>;
+using DataCallback = std::function<void(std::shared_ptr<bb::ByteBuffer>)>;
+using ErrorCallback = std::function<void(const std::string&)>;
 using GenChannelIDFunc = std::function<int()>;
 using CreateChannelFunc = std::function<std::shared_ptr<bcf::IChannel>()>;
 using ConnectionCompletedCallback = std::function<void(std::shared_ptr<bcf::IChannel>)>;
 using ConnectionFailCallback = std::function<void()>;
+using ByteBufferPtr = std::shared_ptr<bb::ByteBuffer>;
 
 enum class ChannelState {
     Idel = 0x01,
@@ -30,12 +29,12 @@ enum class ChannelState {
 };
 
 struct ConnectOption {
-    int32_t m_timeoutMillSeconds = 10'000;//ms
+    int m_timeoutMillSeconds = DEFAULT_TIME_OUT_MILLSCENDS;
+    int m_maxRecvBufferSize = DEFAULT_RECV_BUFFER_SIZE;
     int m_channelid;//bcf自动生成
     bcf::ConnectionFailCallback m_FailCallback;
     bcf::ConnectionCompletedCallback m_CompleteCallback;
     bcf::ReceiveCallback m_ReceiveCallback;
-    bool m_usebigendian = true;
 };
 
 class BCF_EXPORT IChannel: public std::enable_shared_from_this<IChannel>
@@ -55,9 +54,13 @@ public:
     virtual bool open();
     virtual void close();
 
-    virtual int64_t send(const unsigned char* data, uint32_t len) = 0;
+    virtual int64_t send(const char* data, uint32_t len) = 0;
     //底层具体的通道每收到一次数据，调用此函数交给bcf来迁移到用户线程进行转发
-    virtual void pushData2Bcf(const QByteArray&);
+    virtual void pushData2Bcf(ByteBufferPtr&&);
+    virtual void setMaxRecvBufferSize(int size)
+    {
+        (void)size;
+    };
     virtual void setDataCallback(DataCallback&&);
     virtual void setErrorCallback(ErrorCallback&&);
     virtual void setFailedCallback(ConnectionFailCallback&& callback);
@@ -76,9 +79,9 @@ public:
         return -1;
     };
 
-    virtual QByteArray readAll()
+    virtual ByteBufferPtr readAll()
     {
-        return "";
+        return nullptr;
     };
 
 protected:
@@ -89,8 +92,8 @@ protected:
 private:
     void startUserCallbackThread();
     void stopUserCallbackThread();
-    void pushqueueAndNotify(const QByteArray& data);
-    std::deque<QByteArray> popall();
+    void pushqueueAndNotify(ByteBufferPtr&&);
+    std::deque<ByteBufferPtr> popall();
 
 protected:
     DataCallback m_dataCallback;
@@ -99,7 +102,7 @@ protected:
     bcf::ConnectionCompletedCallback m_CompleteCallback;
 
 private:
-    std::deque<QByteArray> m_Queue;
+    std::deque<ByteBufferPtr> m_Queue;
     std::atomic_bool m_isexit;
     std::mutex m_QueueMtx;
     std::condition_variable m_QueueCV;

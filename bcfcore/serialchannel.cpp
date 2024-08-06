@@ -81,7 +81,7 @@ bool SerialChannel::closeInternal()
     return true;
 }
 
-int64_t SerialChannel::send(const unsigned char* data, uint32_t len)
+int64_t SerialChannel::send(const char* data, uint32_t len)
 {
     return m_pSerialPort->write((char*)data, len);
 }
@@ -105,16 +105,26 @@ uint32_t SerialChannel::write(uint8_t* buff, uint32_t len)
     return m_pSerialPort->write((char*)buff, len);
 }
 
-QByteArray SerialChannel::readAll()
+ByteBufferPtr SerialChannel::readAll()
 {
     QByteArray res = m_pSerialPort->readAll();
-    return res;
+    ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
+    ptr->putBytes((uint8_t*)res.data(), res.length());
+    return ptr;
 }
+
+void bcf::SerialChannel::setMaxRecvBufferSize(int maxRecvBufferSize)
+{
+    m_pSerialPort->setReadBufferSize(maxRecvBufferSize);
+}
+
 void SerialChannel::onReceivedData()
 {
-    auto data = m_pSerialPort->readAll();
-    qDebug() << "Received data:" << data;
-    pushData2Bcf(data);
+    auto res = m_pSerialPort->readAll();
+    qDebug() << "Received data:" << res;
+    ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
+    ptr->putBytes((uint8_t*)res.data(), res.length());
+    pushData2Bcf(std::move(ptr));
 }
 
 void SerialChannel::onErrorOccurred(int error)
@@ -124,7 +134,7 @@ void SerialChannel::onErrorOccurred(int error)
     }
 
     if (m_errorCallback) {
-        m_errorCallback(m_pSerialPort->errorString());
+        m_errorCallback(m_pSerialPort->errorString().toStdString());
     }
 }
 #endif

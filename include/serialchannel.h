@@ -3,7 +3,7 @@
 #include <QObject>
 #include <ichannel.h>
 #include <bcfexport.h>
-#include <globaldefine.h>
+#include <base/globaldefine.h>
 
 class QSerialPort;
 namespace bcf
@@ -34,14 +34,15 @@ private slots:
     void onErrorOccurred(int error);
 
 protected:
-    virtual bool openInternal() override;
-    virtual bool closeInternal() override;
-    virtual bool isOpen() override;
-    virtual int64_t send(const unsigned char* data, uint32_t len) override;
-    virtual uint32_t read(uint8_t* buff, uint32_t len) override;
-    virtual uint32_t write(uint8_t* buff, uint32_t len) override;
+    bool openInternal() override;
+    bool closeInternal() override;
+    bool isOpen() override;
+    int64_t send(const char* data, uint32_t len) override;
+    uint32_t read(uint8_t* buff, uint32_t len) override;
+    uint32_t write(uint8_t* buff, uint32_t len) override;
 
-    virtual QByteArray readAll() override;
+    ByteBufferPtr readAll() override;
+    void setMaxRecvBufferSize(int maxRecvBufferSize) override;
 private:
     QSerialPort* m_pSerialPort = nullptr;
 };

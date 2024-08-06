@@ -5,7 +5,7 @@
 #include <map>
 #include <bcfexport.h>
 #include <ichannel.h>
-#include <noncopyable.hpp>
+#include <base/noncopyable.hpp>
 namespace bcf
 {
 class BCF_EXPORT ChannelManager: public bcf::NonCopyable
