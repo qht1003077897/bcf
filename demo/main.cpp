@@ -1,9 +1,8 @@
-﻿#include <abstractprotocolmodel.h>
+﻿#include <QCoreApplication>
+#include <abstractprotocolmodel.h>
 #include "protocolparser/byheadprotocolparser.h"
 #include "requesthandler.h"
 #include "serialchannel.h"
-#include <QCoreApplication>
-#include <QDebug>
 
 using namespace std;
 constexpr int CHANNEL_ID_SERIALPORT = 0;
@@ -38,8 +37,8 @@ public:
     {
         return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
     };
-    virtual void parse(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
-                       const std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel>)>& callback)
+    virtual void parse(const
+                       std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel>)>& callback)
     override
     {
         std::shared_ptr<bcf::ByHeadProtocolModel> model = std::make_shared<bcf::ByHeadProtocolModel>();
@@ -56,25 +55,32 @@ int main(int argc, char* argv[])
 
     auto requestPtr = bcf::RequestHandlerBuilder()
                       .withTimeOut(10'000)
-                      .withProtocolBuilders({std::make_shared<ByHeadProtocolBuilder>(), std::make_shared<UserProtocolBuilder>()})
+                      .withProtocolBuilders({std::make_shared<ByHeadProtocolBuilder>(),
+                                             std::make_shared<UserProtocolBuilder>()})
                       .withProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
     .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
 #ifdef BCF_USE_SERIALPORT
-    .withChannel(CHANNEL_ID_SERIALPORT, (bcf::CreateChannelFunc)[]() {
+    .withChannel(CHANNEL_ID_SERIALPORT, []() {
         auto channel = std::make_shared<bcf::SerialChannel>();
         channel->setPortName("COM2");
         return channel;
     })
 #endif
-    .withReceiveData([](bcf::ErrorCode code, std::shared_ptr<bcf::AbstractProtocolModel> model) {
-        printf("code:%d \n", code);
-        printf("protocolType:%d \n", model->protocolType());
+    .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
+        std::cout <<  "withReceiveData protocolType:"  << model->protocolType() << std::endl;
+        if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {
+            auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(model);
+            if (bmodel) {
+                std::cout <<  "withReceiveData retmodel seq: " << bmodel->seq << std::endl;
+                std::cout << "withReceiveData retmodel body:" << bmodel->body() << std::endl;
+            }
+        }
     })
     .withFailedCallback([]() {
-        printf("withFailedCallback \n");
+        std::cerr <<  "withFailedCallback"  << std::endl;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
-        printf("withConnectionCompletedCallback channelID:%d \n", channel->channelID());
+        std::cout <<  "withConnectionCompletedCallback channelID:" << channel->channelID() << std::endl;
     })
     .connect();
 
@@ -85,10 +91,12 @@ int main(int argc, char* argv[])
 
     requestPtr->request(reqmodel, [](bcf::ErrorCode code,
     std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
-        printf( "retmodel code:%d \n", code) ;
-        if (retmodel) {
-            printf("retmodel seq:%d \n", retmodel->seq) ;
+        auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(retmodel);
+        if (bmodel) {
+            std::cout <<  "request retmodel seq: " << bmodel->seq << std::endl;
+            std::cout << "request retmodel body:" << bmodel->body() << std::endl;
         }
     });
+
     return app.exec();
 }

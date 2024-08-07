@@ -54,6 +54,7 @@ class BCF_EXPORT ByteBuffer
 public:
     ByteBuffer(uint32_t size = BB_DEFAULT_SIZE);
     ByteBuffer(uint8_t* arr, uint32_t size);
+    ByteBuffer(std::vector<uint8_t>&& b): buf(std::move(b)) {};
     ~ByteBuffer() = default;
 
     uint32_t bytesRemaining(); // Number of uint8_ts from the current read position till the end of the buffer
@@ -87,6 +88,24 @@ public:
 
     // Replacement
     void replace(uint8_t key, uint8_t rep, uint32_t start = 0, bool firstOccuranceOnly = false);
+
+    //Returns a byte array containing len bytes from this byte array, starting at position pos.
+    //If len is -1 (the default), or pos + len >= size(), returns a byte array containing all bytes starting at position pos until the end of the byte array.
+    //e.g. qthelp://org.qt-project.qtcore.5152/qtcore/qbytearray.html#QByteArray
+    //mid 之后，rpos移动len长度
+    ByteBuffer mid(size_t len = -1);
+
+    ByteBuffer& remove(size_t len = -1);
+
+    auto begin() const
+    {
+        return buf.begin();
+    }
+
+    auto end() const
+    {
+        return buf.end();
+    }
 
     // Read
 
@@ -181,7 +200,7 @@ private:
     template<typename T> T read(uint32_t index) const
     {
         if (index + sizeof(T) <= buf.size())
-            return *((T * ) &buf[index]);
+            return *((T* ) &buf[index]);
         return 0;
     }
 

@@ -13,25 +13,12 @@ enum PackMode {
     UNPACK_BY_USER  = 4,            // 如何扩展: UNPACK_BY_USER,UNPACK_BY_USER+1 UNPACK_BY_USER+2
 };
 
-#define DEFAULT_PACKAGE_MAX_LENGTH  (1 << 21)   // 2M
-
-// UNPACK_BY_DELIMITER
-#define PACKAGE_MAX_DELIMITER_BYTES 8
-
-// UNPACK_BY_LENGTH_FIELD
-enum PackEndian {
-    USE_HOST_ENDIAN = BYTE_ORDER,
-    USE_LITTEL_ENDIAN = LITTLE_ENDIAN,
-    USE_BIG_ENDIAN    = BIG_ENDIAN,
-    USE_NET_ENDIAN = USE_BIG_ENDIAN,
-};
-
 class AbstractProtocolModel
 {
 public:
+    uint8_t type = PackMode::UNPACK_MODE_NONE;
     uint32_t seq = 0;
-    uint16_t cmd = 0x0001;
-    PackEndian endian = PackEndian::USE_NET_ENDIAN;
+    uint16_t cmd = 0;
     virtual PackMode protocolType() = 0;
 };
 
@@ -39,13 +26,19 @@ class ByHeadProtocolModel : public AbstractProtocolModel
 {
 public:
     /*
-    |************head************|*****body*****|
-    |    seq   |  cmd  | length  |     XXX      |
-    |    4byte | 2byte | 4bytes  | length bytes |
-    |****************************|**************|
+    |*****************head*******************|*****body*****|
+    |    type  |   seq   |  cmd    | length  |     XXX      |
+    |    1byte |  4byte  | 2byte   | 4bytes  | length bytes |
+    |****************************************|**************|
     */
+    /*
+        协议类型
+        会话唯一序列号
+        业务唯一识别ID
+        body的长度
+    **/
     uint32_t length = 0;
-    constexpr static uint16_t body_offset = sizeof(seq) + sizeof(cmd) + sizeof(length);
+    constexpr static uint16_t body_offset = sizeof(type) + sizeof(seq) + sizeof(cmd) + sizeof(length);
 
     void setBody(const std::string& body)
     {

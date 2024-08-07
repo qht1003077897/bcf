@@ -185,8 +185,8 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
                 }
             }
 
-            std::cout << "not find seq , ErrorCode::UNOWNED_DATA" << std::endl;
-            tmpCallback(bcf::ErrorCode::UNOWNED_DATA, model);
+            std::cout << "not find seq" << std::endl;
+            tmpCallback(model);
         });
     };
 

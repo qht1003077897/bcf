@@ -98,3 +98,14 @@
         #error "Unknown byte order!"
     #endif
 #endif
+
+namespace bcf
+{
+// UNPACK_BY_LENGTH_FIELD
+enum PackEndian {
+    USE_HOST_ENDIAN = BYTE_ORDER,
+    USE_LITTEL_ENDIAN = LITTLE_ENDIAN,
+    USE_BIG_ENDIAN    = BIG_ENDIAN,
+    USE_NET_ENDIAN = USE_BIG_ENDIAN,
+};
+}

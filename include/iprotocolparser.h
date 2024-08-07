@@ -17,8 +17,10 @@ public:
     };
     virtual ~IProtocolParser() = default;
     virtual bcf::PackMode getType() const = 0;
+    //嗅探此解析器能否解析buffer
+    virtual bool sniff(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr) = 0;
     //使用者自己实现parse函数，通过回调返回parser好的数据和parser状态
-    virtual void parse(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
-                       const std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel> model)>&) = 0;
+    virtual void parse(const
+                       std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel> model)>&) = 0;
 };
 }

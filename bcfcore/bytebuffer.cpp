@@ -184,6 +184,20 @@ void ByteBuffer::replace(uint8_t key, uint8_t rep, uint32_t start, bool firstOcc
     }
 }
 
+ByteBuffer ByteBuffer::mid(size_t len)
+{
+    size_t beginpos = rpos;
+    if (rpos >= buf.size()) {
+        return ByteBuffer(0);
+    }
+    if (len == -1 || rpos + len > buf.size()) {
+        len = buf.size() - rpos; // 如果长度超出范围，调整长度
+    }
+
+    rpos += len;
+    return std::vector<uint8_t>(buf.begin() + beginpos, buf.begin() + rpos);
+}
+
 // Read Functions
 
 uint8_t ByteBuffer::peek() const
@@ -272,6 +286,10 @@ uint16_t ByteBuffer::getShort(uint32_t index) const
 
 void ByteBuffer::put(ByteBuffer* src)
 {
+    if (nullptr == src) {
+        return;
+    }
+
     uint32_t len = src->size();
     for (uint32_t i = 0; i < len; i++)
         append<uint8_t>(src->get(i));

@@ -11,10 +11,6 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_DEBUG_POSTFIX "d")
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
-set(LINK_BCF Qt${QT_VERSION_MAJOR}::Core)
-
 add_definitions(-DBUILD_BCF_LIB)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -47,5 +43,5 @@ add_library(bcfcore SHARED
 )
 
 if(BCF_USE_SERIALPORT OR BCF_USE_TCP)
-target_link_libraries(bcfcore PRIVATE ${LINK_BCF})
+    target_link_libraries(bcfcore PRIVATE  Qt${QT_VERSION_MAJOR}::Core ${LINK_BCF})
 endif()

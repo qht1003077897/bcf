@@ -30,29 +30,25 @@ void ProtocolParserManager::parseByID(bcf::PackMode id,
     }
 
     const auto& parser = itr->second;
-    parser->parse(byteBufferPtr, _callback);
+    if (!parser->sniff(byteBufferPtr)) {
+        return;
+    }
+
+    parser->parse(_callback);
 }
 
 void ProtocolParserManager::parseByAll(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
                                        std::function<void (IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>&)>
                                        _callback)
 {
-    IProtocolParser::ParserState state = IProtocolParser::ParserState::OK;
-    std::shared_ptr<AbstractProtocolModel> model;
     for (auto& p : parsers) {
         auto& parser = p.second;
-        parser->parse(byteBufferPtr, [&](IProtocolParser::ParserState _state,
-        std::shared_ptr<AbstractProtocolModel> _model) {
-            state = _state;
-            model = _model;
-        });
-
-        if (IProtocolParser::ParserState::Error != state) {
-            break;
+        if (!parser->sniff(byteBufferPtr)) {
+            continue;
         }
-    }
 
-    _callback(state, model);
+        parser->parse(_callback);
+    }
 }
 
 
