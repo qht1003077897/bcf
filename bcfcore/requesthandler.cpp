@@ -1,5 +1,6 @@
 ﻿#include <channelmanager.h>
 #include <base/globaldefine.h>
+#include <base/timer.h>
 #include <protocolbuildermanager.h>
 #include <protocolparsermanager.h>
 #include "requesthandler.h"
@@ -12,12 +13,14 @@ public:
         : protocolParserManager(std::make_unique<bcf::ProtocolParserManager>())
         , protocolBuilderManager(std::make_unique<bcf::ProtocolBuilderManager>())
         , m_channelManager(std::make_unique<bcf::ChannelManager>())
+        , m_timer(new bcf::Timer())
     {
         startTimeOut();
     };
     ~RequestHandlerPrivate()
     {
         m_isexit = true;
+        m_timer->stop();
     };
     void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback callback);
 private:
@@ -40,6 +43,7 @@ private:
     std::unique_ptr<bcf::ProtocolParserManager> protocolParserManager;
     std::unique_ptr<bcf::ProtocolBuilderManager> protocolBuilderManager;
     std::unique_ptr<bcf::ChannelManager> m_channelManager;
+    std::shared_ptr<bcf::Timer> m_timer;
     ConnectOption m_ConnectOption;
 };
 
@@ -126,7 +130,7 @@ void RequestHandler::request(std::shared_ptr<bcf::AbstractProtocolModel> model,
 {
     d_ptr->request(model, std::move(callback));
 }
-#include "base/platform.hpp"
+
 void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::AbstractProtocolModel>
                                                     model,
                                                     RequestCallback callback)
@@ -231,28 +235,24 @@ void RequestHandler::RequestHandlerPrivate::connect()
 
 void RequestHandler::RequestHandlerPrivate::startTimeOut()
 {
-    auto timeOutThread = std::thread([this]() {
-        while (!m_isexit) {
-            {
-                std::unique_lock<std::mutex> l(m_mtx);
-                auto it  = callbacks.begin();
-                while (it != callbacks.end()) {
-                    if ( 0 == it->second.first) {
-                        //超时时间减到0
+    m_timer->setInterval([this]() {
+        {
+            std::unique_lock<std::mutex> l(m_mtx);
+            auto it  = callbacks.begin();
+            while (it != callbacks.end()) {
+                if ( 0 == it->second.first) {
+                    //超时时间减到0
 
-                        std::cout << "seq: " << it->first << "%d timeout,remove it!" << std::endl;
-                        std::bind(it->second.second, bcf::ErrorCode::TIME_OUT, nullptr)();
-                        callbacks.erase(it++);
-                        continue;
-                    }
-
-                    //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
-                    it->second.first = std::max(0,  it->second.first - 1000);
-                    it++;
+                    std::cout << "seq: " << it->first << "timeout,remove it!" << std::endl;
+                    std::bind(it->second.second, bcf::ErrorCode::TIME_OUT, nullptr)();
+                    callbacks.erase(it++);
+                    continue;
                 }
+
+                //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
+                it->second.first = std::max(0,  it->second.first - 1000);
+                it++;
             }
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         }
-    });
-    timeOutThread.detach();
+    }, 1000);
 }

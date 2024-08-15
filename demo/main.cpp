@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
     .connect();
 
     std::shared_ptr<bcf::ByHeadProtocolModel> reqmodel = std::make_shared<bcf::ByHeadProtocolModel>();
-    reqmodel->seq = 1;
+    reqmodel->seq = bcf::util::getNextSeq();
     reqmodel->cmd = 1;
     reqmodel->setBody(std::string("this is " +  std::to_string(reqmodel->seq) + " times request"));
 
