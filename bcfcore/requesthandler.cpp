@@ -3,6 +3,7 @@
 #include <base/timer.h>
 #include <protocolbuildermanager.h>
 #include <protocolparsermanager.h>
+#include "filetransmithelper.h"
 #include "requesthandler.h"
 using namespace bcf;
 
@@ -14,6 +15,7 @@ public:
         , protocolBuilderManager(std::make_unique<bcf::ProtocolBuilderManager>())
         , m_channelManager(std::make_unique<bcf::ChannelManager>())
         , m_timer(new bcf::Timer())
+        , m_fileTransmitHelper(std::make_unique<bcf::FileTransmitHelper>())
     {
         startTimeOut();
     };
@@ -22,7 +24,11 @@ public:
         m_isexit = true;
         m_timer->stop();
     };
-    void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback callback);
+    void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback&& callback);
+    void sendFile(const std::string& fileName, const ProgressCallback& pcallback,
+                  const TransmitStatusCallback& tcallback);
+    void sendFileWithYModel(const std::string& fileName, const ProgressCallback& pcallback,
+                            const TransmitStatusCallback& tcallback);
 private:
     void startTimeOut();
     void setAbandonCallback(bcf::AbandonCallback && callback);
@@ -44,6 +50,7 @@ private:
     std::unique_ptr<bcf::ProtocolBuilderManager> protocolBuilderManager;
     std::unique_ptr<bcf::ChannelManager> m_channelManager;
     std::shared_ptr<bcf::Timer> m_timer;
+    std::unique_ptr<bcf::FileTransmitHelper> m_fileTransmitHelper;
     ConnectOption m_ConnectOption;
 };
 
@@ -131,9 +138,22 @@ void RequestHandler::request(std::shared_ptr<bcf::AbstractProtocolModel> model,
     d_ptr->request(model, std::move(callback));
 }
 
+void RequestHandler::sendFile(const std::string& fileName, const ProgressCallback& pcallback,
+                              const TransmitStatusCallback& tcallback)
+{
+    d_ptr->sendFile(fileName, pcallback, tcallback);
+}
+
+void RequestHandler::sendFileWithYModel(const std::string& fileName,
+                                        const ProgressCallback& pcallback,
+                                        const TransmitStatusCallback& tcallback)
+{
+    d_ptr->sendFileWithYModel(fileName, pcallback, tcallback);
+}
+
 void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::AbstractProtocolModel>
                                                     model,
-                                                    RequestCallback callback)
+                                                    RequestCallback&& callback)
 {
     const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
     if (nullptr == channel || !channel->isOpen()) {
@@ -153,6 +173,21 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
     auto buf = std::make_unique<uint8_t[]>(res->size());
     res->getBytes(buf.get(), res->size());
     channel->send((const char*)buf.get(), res->size());
+}
+
+void RequestHandler::RequestHandlerPrivate::sendFile(const std::string& fileName,
+                                                     const ProgressCallback& pcallback, const TransmitStatusCallback& tcallback)
+{
+    const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
+    m_fileTransmitHelper->startTransmit(channel, fileName, std::move(pcallback), std::move(tcallback));
+}
+
+void RequestHandler::RequestHandlerPrivate::sendFileWithYModel(const std::string& fileName,
+                                                               const ProgressCallback& pcallback, const TransmitStatusCallback& tcallback)
+{
+    const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
+    m_fileTransmitHelper->startTransmitWithYModel(channel, fileName, std::move(pcallback),
+                                                  std::move(tcallback));
 };
 
 ////如何区分是发送回复的还是主动上报的？因此全部都是走receive，receive里面根据业务ID判断转给哪个callback

@@ -1,6 +1,7 @@
-﻿#ifdef BCF_USE_SERIALPORT
+﻿#ifdef BCF_USE_QT_SERIALPORT
 #include <QSerialPort>
 #include <QDebug>
+#include <QTimer>
 #include "serialchannel.h"
 using namespace bcf;
 
@@ -14,9 +15,8 @@ SerialChannel::SerialChannel(QObject* parent):
     setFlowControl(QSerialPort::FlowControl::NoFlowControl);
     setStopBits(QSerialPort::StopBits::OneStop);
     connect(m_pSerialPort, &QSerialPort::errorOccurred, this, &SerialChannel::onErrorOccurred);
-    connect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel::onReceivedData);
+    usePassiveModel();
 }
-
 
 SerialChannel::~SerialChannel()
 {
@@ -103,6 +103,22 @@ uint32_t SerialChannel::read(uint8_t* buff, uint32_t len)
 uint32_t SerialChannel::write(uint8_t* buff, uint32_t len)
 {
     return m_pSerialPort->write((char*)buff, len);
+}
+
+void SerialChannel::useActiveModel()
+{
+    if (m_pSerialPort->isOpen()) {
+        m_pSerialPort->clear();
+    }
+    disconnect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel::onReceivedData);
+}
+
+void SerialChannel::usePassiveModel()
+{
+    if (m_pSerialPort->isOpen()) {
+        m_pSerialPort->clear();
+    }
+    connect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel::onReceivedData);
 }
 
 ByteBufferPtr SerialChannel::readAll()

@@ -1,5 +1,4 @@
-﻿#ifdef BCF_USE_SERIALPORT
-#pragma once
+﻿#pragma once
 #include <QObject>
 #include <ichannel.h>
 #include <bcfexport.h>
@@ -40,11 +39,11 @@ protected:
     int64_t send(const char* data, uint32_t len) override;
     uint32_t read(uint8_t* buff, uint32_t len) override;
     uint32_t write(uint8_t* buff, uint32_t len) override;
-
+    void useActiveModel() override;
+    void usePassiveModel() override;
     ByteBufferPtr readAll() override;
     void setMaxRecvBufferSize(int maxRecvBufferSize) override;
 private:
     QSerialPort* m_pSerialPort = nullptr;
 };
 }       // namespace bcf
-#endif  //BCF_USE_SERIALPORT

@@ -46,34 +46,34 @@ public:
     {
         m_channelID = channelID;
     };
-    virtual int channelID() const
+    inline int channelID() const
     {
         return m_channelID;
     };
-    virtual bool isOpen() = 0;
-    virtual bool open();
-    virtual void close();
+    bool open();
+    void close();
 
-    virtual int64_t send(const char* data, uint32_t len) = 0;
     //底层具体的通道每收到一次数据，调用此函数交给bcf来迁移到用户线程进行转发
-    virtual void pushData2Bcf(ByteBufferPtr&&);
+    void pushData2Bcf(ByteBufferPtr&&);
     virtual void setMaxRecvBufferSize(int size)
     {
         (void)size;
     };
-    virtual void setDataCallback(DataCallback&&);
-    virtual void setErrorCallback(ErrorCallback&&);
-    virtual void setFailedCallback(ConnectionFailCallback&& callback);
-    virtual void setConnectionCompletedCallback(
-        ConnectionCompletedCallback&& callback);
+    void setDataCallback(DataCallback&&);
+    void setErrorCallback(ErrorCallback&&);
+    void setFailedCallback(ConnectionFailCallback&& callback);
+    void setConnectionCompletedCallback(ConnectionCompletedCallback&& callback);
+
     std::shared_ptr<IChannel> getSharedFromThis()
     {
         return shared_from_this();
     }
+
     virtual uint32_t read(unsigned char* buff, uint32_t len)
     {
         return -1;
     };
+
     virtual uint32_t write(unsigned char* buff, uint32_t len)
     {
         return -1;
@@ -83,6 +83,13 @@ public:
     {
         return nullptr;
     };
+    //对于串口或者tcp的后端实现而言，一般有两种数据接收方式。第一种Active即为用户主动触发read和write。passive即为通过库提供的数据回调接口或者信号槽触发。在使用ymodel发送文件时，需要使用active模式。
+    //除非你想主动read，否则可以不用关心这两个函数
+    virtual void useActiveModel() {}
+    virtual void usePassiveModel() {}
+
+    virtual bool isOpen() = 0;
+    virtual int64_t send(const char* data, uint32_t len) = 0;
 
 protected:
     //必须重写

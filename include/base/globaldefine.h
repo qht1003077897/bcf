@@ -41,10 +41,23 @@ enum ErrorCode {
     UNKOWNED_DATA = 0x0004,             //没有找到seq的数据，可能时底层主动上报的数据
 };
 
+enum TransmitStatus {
+    StatusEstablishing,
+    StatusEstablish,
+    StatusTransmit,
+    StatusFinish,
+    StatusAbort,
+    StatusTimeout,
+    StatusError
+};
+
 class AbstractProtocolModel;
 using RequestCallback =
     std::function<void(bcf::ErrorCode, std::shared_ptr<bcf::AbstractProtocolModel>)>;
 using ReceiveCallback = std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
 using AbandonCallback =
     std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
+
+using ProgressCallback = std::function<void(int)>;
+using TransmitStatusCallback = std::function<void(TransmitStatus)>;
 }//namespace bcf

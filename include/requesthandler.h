@@ -50,6 +50,11 @@ public:
     ~RequestHandler();
     void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback&&);
 
+    void sendFile(const std::string& fileName, const ProgressCallback&, const TransmitStatusCallback&);
+    //特定于串口的Ymodel协议
+    void sendFileWithYModel(const std::string& fileName, const ProgressCallback&,
+                            const TransmitStatusCallback&);
+
 private:
     friend class RequestHandlerBuilder;
     class RequestHandlerPrivate;

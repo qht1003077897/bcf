@@ -1,11 +1,8 @@
 ﻿#include <QCoreApplication>
-#include <abstractprotocolmodel.h>
-#include "protocolparser/byheadprotocolparser.h"
-#include "requesthandler.h"
-#include "serialchannel.h"
-
+#include "bcf.h"
 using namespace std;
-constexpr int CHANNEL_ID_SERIALPORT = 0;
+
+#define CHANNEL_ID_SERIALPORT 0
 
 class UserProtocolModel : public bcf::AbstractProtocolModel
 {
@@ -59,13 +56,11 @@ int main(int argc, char* argv[])
                                              std::make_shared<UserProtocolBuilder>()})
                       .withProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
     .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
-#ifdef BCF_USE_SERIALPORT
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
         auto channel = std::make_shared<bcf::SerialChannel>();
         channel->setPortName("COM2");
         return channel;
     })
-#endif
     .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
         std::cout <<  "withReceiveData protocolType:"  << model->protocolType() << std::endl;
         if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {
@@ -86,17 +81,23 @@ int main(int argc, char* argv[])
 
     std::shared_ptr<bcf::ByHeadProtocolModel> reqmodel = std::make_shared<bcf::ByHeadProtocolModel>();
     reqmodel->seq = bcf::util::getNextSeq();
-    reqmodel->cmd = 1;
+#define CMD_TEST_LOOP 1
+    reqmodel->cmd = CMD_TEST_LOOP;
     reqmodel->setBody(std::string("this is " +  std::to_string(reqmodel->seq) + " times request"));
 
-    requestPtr->request(reqmodel, [](bcf::ErrorCode code,
-    std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
-        auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(retmodel);
-        if (bmodel) {
-            std::cout <<  "request retmodel seq: " << bmodel->seq << std::endl;
-            std::cout << "request retmodel body:" << bmodel->body() << std::endl;
-        }
-    });
+//    requestPtr->request(reqmodel, [](bcf::ErrorCode code,
+//    std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
+//        auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(retmodel);
+//        if (bmodel) {
+//            std::cout << "retmodel seq: " << bmodel->seq << std::endl;
+//            std::cout << "retmodel body:" << bmodel->body() << std::endl;
+//        }
+//    });
 
+    std::string filename = "C:\\Users\\bridge\\Desktop\\image.bin";//902 字节
+    requestPtr->sendFileWithYModel(filename, [](int progress) {
+        std::cout << "progress: " << progress << std::endl;
+    }, [](bcf::TransmitStatus status) {
+    });
     return app.exec();
 }

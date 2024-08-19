@@ -14,7 +14,7 @@ class Timer : public std::enable_shared_from_this<Timer>
 public:
 
     template<typename Function>
-    void setTimeout(Function function, int milldelay)
+    void setTimeout(Function &&function, int milldelay)
     {
         active = true;
         auto self = shared_from_this();
@@ -28,7 +28,7 @@ public:
     }
 
     template<typename Function>
-    void setInterval(Function function, int millinterval)
+    void setInterval(Function &&function, int millinterval)
     {
         active = true;
         auto self = shared_from_this();
