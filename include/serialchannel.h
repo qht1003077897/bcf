@@ -27,7 +27,6 @@ public:
 
     void setFlowControl(int flowControl);
 
-
 private slots:
     void onReceivedData();
     void onErrorOccurred(int error);

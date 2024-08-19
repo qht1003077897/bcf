@@ -29,10 +29,15 @@ void IChannel::close()
     stopUserCallbackThread();
 }
 
-void IChannel::setDataCallback(DataCallback&& dataDallback)
+void IChannel::setDataCallback(DataCallback&& callback)
 {
     std::unique_lock<std::mutex> l(m_QueueMtx);
-    m_dataCallback = std::move(dataDallback);
+    m_dataCallback = std::move(callback);
+}
+
+void IChannel::setRawDataCallback(DataCallback&& callback)
+{
+    m_rawdataCallback = std::move(callback);
 }
 
 void IChannel::setErrorCallback(ErrorCallback&& errorCallback)

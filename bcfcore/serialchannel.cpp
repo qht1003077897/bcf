@@ -1,5 +1,4 @@
-﻿#ifdef BCF_USE_QT_SERIALPORT
-#include <QSerialPort>
+﻿#include <QSerialPort>
 #include <QDebug>
 #include <QTimer>
 #include "serialchannel.h"
@@ -140,6 +139,11 @@ void SerialChannel::onReceivedData()
     qDebug() << "Received data:" << res;
     ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
     ptr->putBytes((uint8_t*)res.data(), res.length());
+    if (m_rawdataCallback) {
+        m_rawdataCallback(std::move(ptr));
+        return;
+    }
+
     pushData2Bcf(std::move(ptr));
 }
 
@@ -153,4 +157,3 @@ void SerialChannel::onErrorOccurred(int error)
         m_errorCallback(m_pSerialPort->errorString().toStdString());
     }
 }
-#endif

@@ -6,7 +6,7 @@
 #include "ymodem.h"
 #ifdef BCF_USE_QT_SERIALPORT
     #include <QTimer>
-#elif
+#else
     #include "base/timer.h"
 #endif
 
@@ -18,7 +18,7 @@ class BCF_EXPORT YmodemTransmit  :
     public YModem
 {
     Q_OBJECT
-#elif
+#else
     public YModem {
 #endif
 public:

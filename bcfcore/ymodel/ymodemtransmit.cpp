@@ -10,13 +10,13 @@ using namespace bcf;
 YmodemTransmit::YmodemTransmit()
 #ifdef BCF_USE_QT_SERIALPORT
     : readTimer(std::make_shared<QTimer>())
-#elif
+#else
     : readTimer(std::make_shared<bcf::Timer>())
 #endif
 {
 #ifdef BCF_USE_QT_SERIALPORT
     QObject::connect(readTimer.get(), &QTimer::timeout, this, &YmodemTransmit::slotReadTimeOut);
-#elif
+#else
     timeOutFunc = std::bind(&YmodemTransmit::slotReadTimeOut, this);
 #endif
 }
@@ -123,7 +123,7 @@ void YmodemTransmit::setTimeOut(int timeout)
 {
 #ifdef BCF_USE_QT_SERIALPORT
     readTimer->start(timeout);
-#elif
+#else
     readTimer->setTimeout(timeOutFunc, timeout);
 #endif
 }

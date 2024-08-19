@@ -2,14 +2,13 @@
 
 #include <memory>
 #include <map>
-#include <bcfexport.h>
 #include <abstractprotocolmodel.h>
 #include <iprotocolbuilder.h>
 #include <base/noncopyable.hpp>
 
 namespace bcf
 {
-class BCF_EXPORT ProtocolBuilderManager: public bcf::NonCopyable
+class ProtocolBuilderManager: public bcf::NonCopyable
 {
 public:
     void addBuilder(std::shared_ptr<IProtocolBuilder> newBuilder);

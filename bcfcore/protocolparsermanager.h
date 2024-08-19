@@ -2,14 +2,13 @@
 
 #include <memory>
 #include <map>
-#include <bcfexport.h>
 #include <abstractprotocolmodel.h>
 #include <iprotocolparser.h>
 #include <base/noncopyable.hpp>
 
 namespace bcf
 {
-class BCF_EXPORT ProtocolParserManager: public bcf::NonCopyable
+class ProtocolParserManager: public bcf::NonCopyable
 {
 public:
     void addParser(const std::shared_ptr<IProtocolParser>& parser);

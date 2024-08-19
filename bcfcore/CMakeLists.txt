@@ -4,7 +4,6 @@ project(bcf LANGUAGES CXX)
 
 set(CMAKE_AUTOMOC ON)
 
-option(BCF_USE_QT_SERIALPORT "使用bcf内部的串口能力，由QT5提供" ON)
 option(BCF_USE_TCP "使用bcf内部的TCP能力，由QT5提供" ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
@@ -29,6 +28,7 @@ FILE(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
                           "${CMAKE_SOURCE_DIR}/include/*.h"
                           "${CMAKE_SOURCE_DIR}/include/*.hpp")
 
+set(BCF_USE_QT_SERIALPORT ON)
 if(BCF_USE_QT_SERIALPORT)
     add_definitions(-DBCF_USE_QT_SERIALPORT)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS SerialPort)

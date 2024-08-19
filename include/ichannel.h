@@ -31,13 +31,13 @@ enum class ChannelState {
 struct ConnectOption {
     int m_timeoutMillSeconds = DEFAULT_TIME_OUT_MILLSCENDS;
     int m_maxRecvBufferSize = DEFAULT_RECV_BUFFER_SIZE;
-    int m_channelid;//bcf自动生成
+    int m_channelid;
     bcf::ConnectionFailCallback m_FailCallback;
     bcf::ConnectionCompletedCallback m_CompleteCallback;
     bcf::ReceiveCallback m_ReceiveCallback;
 };
 
-class BCF_EXPORT IChannel: public std::enable_shared_from_this<IChannel>
+class IChannel: public std::enable_shared_from_this<IChannel>
 {
 public:
     virtual ~IChannel();
@@ -53,13 +53,25 @@ public:
     bool open();
     void close();
 
-    //底层具体的通道每收到一次数据，调用此函数交给bcf来迁移到用户线程进行转发
+    /**
+    * @brief 底层具体的通道每收到一次数据，调用此函数交给bcf来迁移到用户线程进行转发
+    */
     void pushData2Bcf(ByteBufferPtr&&);
     virtual void setMaxRecvBufferSize(int size)
     {
         (void)size;
     };
     void setDataCallback(DataCallback&&);
+    /*!
+    * @brief 支持原始裸流数据的接收，不经过requesthandler，用户直接使用ichannel对象注册原始数据回调即可。
+    * >NOTES: \n
+    * 使用requesthandler进行request请求和使用setRawDataCallback进行原始数据流通信是互斥的。
+    * 即:如果设置了RawDataCallback，则经由requesthandler的请求数据也是从此接口返回。所以，
+    * 如果不需要使用原始裸流数据了，请给setRawDataCallback接口设置nullptr
+    * @example
+    * channel->setRawDataCallback(nullptr);
+    */
+    BCF_EXPORT void setRawDataCallback(DataCallback&&);
     void setErrorCallback(ErrorCallback&&);
     void setFailedCallback(ConnectionFailCallback&& callback);
     void setConnectionCompletedCallback(ConnectionCompletedCallback&& callback);
@@ -83,13 +95,17 @@ public:
     {
         return nullptr;
     };
-    //对于串口或者tcp的后端实现而言，一般有两种数据接收方式。第一种Active即为用户主动触发read和write。passive即为通过库提供的数据回调接口或者信号槽触发。在使用ymodel发送文件时，需要使用active模式。
-    //除非你想主动read，否则可以不用关心这两个函数
+    /**
+    * @brief 对于串口或者tcp的后端实现而言，一般有两种数据接收方式。\n
+    * 第一种Active即为用户主动触发read和write。passive即为通过库提供的数据回调接口或者信号槽触发。
+    * 在使用ymodel发送文件时，需要使用active模式。
+    * 一般不用关心这两个函数。
+    */
     virtual void useActiveModel() {}
     virtual void usePassiveModel() {}
 
-    virtual bool isOpen() = 0;
-    virtual int64_t send(const char* data, uint32_t len) = 0;
+    BCF_EXPORT virtual bool isOpen() = 0;
+    BCF_EXPORT virtual int64_t send(const char* data, uint32_t len) = 0;
 
 protected:
     //必须重写
@@ -104,6 +120,7 @@ private:
 
 protected:
     DataCallback m_dataCallback;
+    DataCallback m_rawdataCallback;
     ErrorCallback m_errorCallback;
     bcf::ConnectionFailCallback m_FailCallback;
     bcf::ConnectionCompletedCallback m_CompleteCallback;

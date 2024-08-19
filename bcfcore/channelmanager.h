@@ -3,12 +3,11 @@
 #include <memory>
 #include <functional>
 #include <map>
-#include <bcfexport.h>
 #include <ichannel.h>
 #include <base/noncopyable.hpp>
 namespace bcf
 {
-class BCF_EXPORT ChannelManager: public bcf::NonCopyable
+class ChannelManager: public bcf::NonCopyable
 {
 public:
     void registerChannel(int, CreateChannelFunc func);

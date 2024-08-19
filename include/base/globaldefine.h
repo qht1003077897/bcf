@@ -9,7 +9,6 @@
 //默认的异步chllback回调超时时间，此超时时间不是tcp的alive时间，而是在此时间内，对应的seq没有回复，则认为此条请求超时，则对应的callback会被丢弃
 #define DEFAULT_TIME_OUT_MILLSCENDS 10'000
 
-
 namespace bcf
 {
 namespace
