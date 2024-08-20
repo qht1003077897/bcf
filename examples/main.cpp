@@ -1,9 +1,6 @@
 ﻿#include <QCoreApplication>
 #include <QDebug>
 #include "bcf.h"
-#ifdef BCF_USE_QT_SERIALPORT
-    #include <serialchannel_qt.h>
-#endif
 
 using namespace std;
 
