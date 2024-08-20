@@ -1,6 +1,6 @@
-﻿#include <private/channelmanager.h>
+﻿#include <base/timer.h>
 #include <base/globaldefine.h>
-#include <base/timer.h>
+#include <private/channelmanager.h>
 #include <private/protocolbuildermanager.h>
 #include <private/protocolparsermanager.h>
 #include "private/filetransmithelper.h"
@@ -29,6 +29,7 @@ public:
                   const TransmitStatusCallback& tcallback);
     void sendFileWithYModel(const std::string& fileName, const ProgressCallback& pcallback,
                             const TransmitStatusCallback& tcallback);
+    void connect();
 private:
     void startTimeOut();
     void setAbandonCallback(bcf::AbandonCallback && callback);
@@ -37,7 +38,6 @@ private:
     void setProtocolParsers(const
                             std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers);
     void receive(bcf::ReceiveCallback&& _callback);
-    void connect();
 
 private:
     friend class RequestHandlerBuilder;
@@ -54,82 +54,83 @@ private:
     ConnectOption m_ConnectOption;
 };
 
-RequestHandlerBuilder::RequestHandlerBuilder()
-    : m_requestHandler(std::make_shared<RequestHandler>()) {}
+RequestHandlerBuilder::RequestHandlerBuilder() {}
 
 RequestHandlerBuilder& RequestHandlerBuilder::withTimeOut(int timeoutMillSeconds)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_timeoutMillSeconds = timeoutMillSeconds;
+
+    m_ConnectOption.m_timeoutMillSeconds = timeoutMillSeconds;
     return *this;
 }
 
 RequestHandlerBuilder& RequestHandlerBuilder::withMaxRecvBufferSize(int maxRecvBufferSize)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_maxRecvBufferSize = maxRecvBufferSize;
+    m_ConnectOption.m_maxRecvBufferSize = maxRecvBufferSize;
     return *this;
 }
 
 RequestHandlerBuilder& RequestHandlerBuilder::withAbandonCallback(bcf::AbandonCallback&& callback)
 {
-    m_requestHandler->d_ptr->setAbandonCallback(std::move(callback));
+    m_abcallback = std::move(callback);
     return *this;
 }
 
-RequestHandlerBuilder& RequestHandlerBuilder::withProtocolBuilders(const
-                                                                   std::vector<std::shared_ptr<IProtocolBuilder> >& protocolBuilders)
+RequestHandlerBuilder& RequestHandlerBuilder::registProtocolBuilders(const
+                                                                     std::vector<std::shared_ptr<IProtocolBuilder> >& protocolBuilders)
 {
-    m_requestHandler->d_ptr->setProtocolBuilders(protocolBuilders);
+    m_protocolBuilders = std::move(protocolBuilders);
     return *this;
 }
 
-RequestHandlerBuilder& RequestHandlerBuilder::withProtocolParsers(
+RequestHandlerBuilder& RequestHandlerBuilder::registProtocolParsers(
     const std::vector<std::shared_ptr<IProtocolParser>>& protocolParsers)
 {
-    m_requestHandler->d_ptr->setProtocolParsers(protocolParsers);
+    m_protocolParsers = std::move(protocolParsers);
     return *this;
 }
 
 RequestHandlerBuilder& RequestHandlerBuilder::withChannel(int channelID,
                                                           CreateChannelFunc&& func)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_channelid = channelID;
-    m_requestHandler->d_ptr->m_channelManager->registerChannel(channelID, std::move(func));
+    m_ConnectOption.m_channelid = channelID;
+    m_ccfunc = std::move(func);
     return *this;
 }
 
 RequestHandlerBuilder& RequestHandlerBuilder::withFailedCallback(ConnectionFailCallback&& callback)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_FailCallback = std::move(callback);
+    m_ConnectOption.m_FailCallback = std::move(callback);
     return *this;
 }
 
 RequestHandlerBuilder& RequestHandlerBuilder::withConnectionCompletedCallback(
     ConnectionCompletedCallback&& callback)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_CompleteCallback = std::move(callback);
+    m_ConnectOption.m_CompleteCallback = std::move(callback);
     return *this;
 }
 
 RequestHandlerBuilder& RequestHandlerBuilder::withReceiveData(ReceiveCallback&& callback)
 {
-    m_requestHandler->d_ptr->m_ConnectOption.m_ReceiveCallback = std::move(callback);
+    m_ConnectOption.m_ReceiveCallback = std::move(callback);
     return *this;
 }
 
-std::shared_ptr<RequestHandler> RequestHandlerBuilder::connect()
+std::shared_ptr<RequestHandler> RequestHandlerBuilder::build()
 {
-    m_requestHandler->d_ptr->connect();
+    m_requestHandler = std::shared_ptr<RequestHandler>(new RequestHandler());
+    m_requestHandler->d_ptr->m_ConnectOption = std::move(m_ConnectOption);
+    m_requestHandler->d_ptr->setProtocolBuilders(std::move(m_protocolBuilders));
+    m_requestHandler->d_ptr->setProtocolParsers(std::move(m_protocolParsers));
+    m_requestHandler->d_ptr->m_channelManager->registerChannel(m_ConnectOption.m_channelid,
+                                                               std::move(m_ccfunc));
+    m_requestHandler->d_ptr->setAbandonCallback(std::move(m_abcallback));
     return m_requestHandler;
 }
 
 RequestHandler::RequestHandler()
     : d_ptr(std::make_unique<RequestHandlerPrivate>())
 {
-}
-
-RequestHandler::~RequestHandler()
-{
-
 }
 
 void RequestHandler::request(std::shared_ptr<bcf::AbstractProtocolModel> model,
@@ -151,6 +152,11 @@ void RequestHandler::sendFileWithYModel(const std::string& fileName,
     d_ptr->sendFileWithYModel(fileName, pcallback, tcallback);
 }
 
+void RequestHandler::connect()
+{
+    d_ptr->connect();
+}
+
 void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::AbstractProtocolModel>
                                                     model,
                                                     RequestCallback&& callback)
@@ -162,7 +168,13 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
         return;
     }
 
-    auto res = protocolBuilderManager->build(model->protocolType(), model);
+    auto buffer = protocolBuilderManager->build(model->protocolType(), model);
+    if (!buffer) {
+        std::cerr << "not support ProtocolModel" << std::endl;
+        (callback)(bcf::ErrorCode::PROTOCOL_NOT_EXIST, nullptr);
+        return;
+    }
+
     {
         std::unique_lock<std::mutex> l(m_mtx);
         callbacks.insert(std::make_pair(model->seq,
@@ -170,9 +182,9 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
                                                        std::move(callback))));
     }
 
-    auto buf = std::make_unique<uint8_t[]>(res->size());
-    res->getBytes(buf.get(), res->size());
-    channel->send((const char*)buf.get(), res->size());
+    auto buf = std::make_unique<uint8_t[]>(buffer->size());
+    buffer->getBytes(buf.get(), buffer->size());
+    channel->send((const char*)buf.get(), buffer->size());
 }
 
 void RequestHandler::RequestHandlerPrivate::sendFile(const std::string& fileName,

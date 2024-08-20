@@ -1,4 +1,4 @@
-﻿#include "serialchannel_qt.h"
+﻿#include "SerialChannel_qt.h"
 
 #ifdef BCF_USE_QT_SERIALPORT
 #include <QSerialPort>
@@ -6,7 +6,7 @@
 #include <QTimer>
 using namespace bcf;
 
-SerialChannel::SerialChannel(QObject* parent):
+SerialChannel_QT::SerialChannel_QT(QObject* parent):
     QObject(parent)
 {
     m_pSerialPort = new QSerialPort(this);
@@ -15,11 +15,11 @@ SerialChannel::SerialChannel(QObject* parent):
     setParity(QSerialPort::Parity::NoParity);
     setFlowControl(QSerialPort::FlowControl::NoFlowControl);
     setStopBits(QSerialPort::StopBits::OneStop);
-    connect(m_pSerialPort, &QSerialPort::errorOccurred, this, &SerialChannel::onErrorOccurred);
+    connect(m_pSerialPort, &QSerialPort::errorOccurred, this, &SerialChannel_QT::onErrorOccurred);
     usePassiveModel();
 }
 
-SerialChannel::~SerialChannel()
+SerialChannel_QT::~SerialChannel_QT()
 {
     if (m_pSerialPort->isOpen()) {
         m_pSerialPort->close();
@@ -27,37 +27,37 @@ SerialChannel::~SerialChannel()
     m_pSerialPort->deleteLater();
 }
 
-void SerialChannel::setPortName(const std::string& name)
+void SerialChannel_QT::setPortName(const std::string& name)
 {
     m_pSerialPort->setPortName(QString::fromStdString(name));
 }
 
-void SerialChannel::setBaudRate(int baudRate)
+void SerialChannel_QT::setBaudRate(int baudRate)
 {
     m_pSerialPort->setBaudRate((QSerialPort::BaudRate)baudRate);
 }
 
-void SerialChannel::setDataBits(int dataBits)
+void SerialChannel_QT::setDataBits(int dataBits)
 {
     m_pSerialPort->setDataBits((QSerialPort::DataBits)dataBits);
 }
 
-void SerialChannel::setParity(int parity)
+void SerialChannel_QT::setParity(int parity)
 {
     m_pSerialPort->setParity((QSerialPort::Parity)parity);
 }
 
-void SerialChannel::setStopBits(int stopBits)
+void SerialChannel_QT::setStopBits(int stopBits)
 {
     m_pSerialPort->setStopBits((QSerialPort::StopBits)stopBits);
 }
 
-void SerialChannel::setFlowControl(int flowControl)
+void SerialChannel_QT::setFlowControl(int flowControl)
 {
     m_pSerialPort->setFlowControl((QSerialPort::FlowControl)flowControl);
 }
 
-bool SerialChannel::openInternal()
+bool SerialChannel_QT::openInternal()
 {
     bool res =  m_pSerialPort->open(QSerialPort::ReadWrite);
     qDebug() << "Open:" << m_pSerialPort->portName() << ":" << res;
@@ -73,7 +73,7 @@ bool SerialChannel::openInternal()
     return res;
 }
 
-bool SerialChannel::closeInternal()
+bool SerialChannel_QT::closeInternal()
 {
     qDebug() << "Close:" << m_pSerialPort->portName();
     if (m_pSerialPort->isOpen()) {
@@ -82,12 +82,12 @@ bool SerialChannel::closeInternal()
     return true;
 }
 
-int64_t SerialChannel::send(const char* data, uint32_t len)
+int64_t SerialChannel_QT::send(const char* data, uint32_t len)
 {
     return m_pSerialPort->write((char*)data, len);
 }
 
-bool SerialChannel::isOpen()
+bool SerialChannel_QT::isOpen()
 {
     if (!m_pSerialPort) {
         return false;
@@ -96,33 +96,33 @@ bool SerialChannel::isOpen()
     return m_pSerialPort->isOpen();
 }
 
-uint32_t SerialChannel::read(uint8_t* buff, uint32_t len)
+uint32_t SerialChannel_QT::read(uint8_t* buff, uint32_t len)
 {
     return m_pSerialPort->read((char*)buff, len);
 }
 
-uint32_t SerialChannel::write(uint8_t* buff, uint32_t len)
+uint32_t SerialChannel_QT::write(uint8_t* buff, uint32_t len)
 {
     return m_pSerialPort->write((char*)buff, len);
 }
 
-void SerialChannel::useActiveModel()
+void SerialChannel_QT::useActiveModel()
 {
     if (m_pSerialPort->isOpen()) {
         m_pSerialPort->clear();
     }
-    disconnect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel::onReceivedData);
+    disconnect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel_QT::onReceivedData);
 }
 
-void SerialChannel::usePassiveModel()
+void SerialChannel_QT::usePassiveModel()
 {
     if (m_pSerialPort->isOpen()) {
         m_pSerialPort->clear();
     }
-    connect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel::onReceivedData);
+    connect(m_pSerialPort, &QSerialPort::readyRead, this, &SerialChannel_QT::onReceivedData);
 }
 
-ByteBufferPtr SerialChannel::readAll()
+ByteBufferPtr SerialChannel_QT::readAll()
 {
     QByteArray res = m_pSerialPort->readAll();
     ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
@@ -130,12 +130,12 @@ ByteBufferPtr SerialChannel::readAll()
     return ptr;
 }
 
-void bcf::SerialChannel::setMaxRecvBufferSize(int maxRecvBufferSize)
+void bcf::SerialChannel_QT::setMaxRecvBufferSize(int maxRecvBufferSize)
 {
     m_pSerialPort->setReadBufferSize(maxRecvBufferSize);
 }
 
-void SerialChannel::onReceivedData()
+void SerialChannel_QT::onReceivedData()
 {
     auto res = m_pSerialPort->readAll();
     qDebug() << "Received data:" << res;
@@ -149,7 +149,7 @@ void SerialChannel::onReceivedData()
     pushData2Bcf(std::move(ptr));
 }
 
-void SerialChannel::onErrorOccurred(int error)
+void SerialChannel_QT::onErrorOccurred(int error)
 {
     if ((QSerialPort::SerialPortError)error == QSerialPort::SerialPortError::NoError) {
         return;

@@ -1,16 +1,22 @@
-﻿cmake_minimum_required(VERSION 3.5)
+﻿#cmake_minimum_required(VERSION 3.5)
 
-project(bcfDemo LANGUAGES CXX)
+#project(bcfDemo LANGUAGES CXX)
 
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+#set(CMAKE_CXX_STANDARD 17)
+#set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-include_directories(${CMAKE_SOURCE_DIR}/include)
+#include_directories(${CMAKE_SOURCE_DIR}/include)
 
-find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
-find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
+#find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
+#find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 
-add_executable(bcfDemo
-    main.cpp)
+#add_executable(bcfDemo
+#    main.cpp)
 
-target_link_libraries(bcfDemo PRIVATE bcf Qt${QT_VERSION_MAJOR}::Core)
+#target_link_libraries(bcfDemo PRIVATE bcf Qt${QT_VERSION_MAJOR}::Core)
+
+add_subdirectory(simple)
+#add_subdirectory(ymodel)
+#add_subdirectory(rawdata)
+#add_subdirectory(customprotocol)
+# add_subdirectory(customchannel)

@@ -10,13 +10,13 @@
 class QSerialPort;
 namespace bcf
 {
-class BCF_EXPORT SerialChannel : public QObject, public IChannel
+class BCF_EXPORT SerialChannel_QT : public QObject, public IChannel
 {
     Q_OBJECT
 
 public:
-    explicit SerialChannel(QObject* parent = nullptr);
-    virtual ~SerialChannel();
+    explicit SerialChannel_QT(QObject* parent = nullptr);
+    virtual ~SerialChannel_QT();
 
     void setPortName(const std::string& name);
 

@@ -29,6 +29,18 @@ enum class ChannelState {
 };
 
 struct ConnectOption {
+    ConnectOption& operator=(ConnectOption&& other) noexcept
+    {
+        if (this == &other) return *this;
+
+        m_timeoutMillSeconds = other.m_timeoutMillSeconds;
+        m_maxRecvBufferSize = other.m_maxRecvBufferSize;
+        m_channelid = other.m_channelid;
+        m_FailCallback = std::move(other.m_FailCallback);
+        m_CompleteCallback = std::move(other.m_CompleteCallback);
+        m_ReceiveCallback = std::move(other.m_ReceiveCallback);
+        return *this;
+    }
     int m_timeoutMillSeconds = DEFAULT_TIME_OUT_MILLSCENDS;
     int m_maxRecvBufferSize = DEFAULT_RECV_BUFFER_SIZE;
     int m_channelid;
