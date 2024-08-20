@@ -1,10 +1,11 @@
 Bcf
 =======
 基于c++11和qt5(串口和tcp)的一个基础协议通信框架，内置多种协议，开箱即用。
-本库的重点是打造简单易用的协议通信层，支持自定义串口后端和tcp后端，所以重点不是一个tcp库或者串口库。\n 当然如果你想的话，也可以将它当作一个串口库或者tcp库。
+本库的重点是打造简单易用的协议通信层，支持自定义串口后端和tcp后端，所以重点不是一个tcp库或者串口库。 当然如果你想的话，也可以将它当作一个串口库或者tcp库。
 使用本库，可帮助你在开发串口通信软件或者tcp客户端软件时节省80%的工作。
 
 [![996.icu](https://img.shields.io/badge/link-996.icu-red.svg)](https://996.icu)
+[![MIT](https://img.shields.io/badge/LICENSE-MIT-blue)](https://gitpub.sietium.com/tools/toolkits/bcf/-/blob/master/LICENSE)
 [![LICENSE](https://img.shields.io/badge/license-NPL%20(The%20996%20Prohibited%20License)-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux,%20Windows-green.svg?style=flat-square)](https://github.com/qht1003077897/bcf)
 
