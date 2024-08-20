@@ -9,12 +9,16 @@ Bcf
 [![LICENSE](https://img.shields.io/badge/license-NPL%20(The%20996%20Prohibited%20License)-blue.svg)](https://github.com/996icu/996.ICU/blob/master/LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-Linux,%20Windows-green.svg?style=flat-square)](https://github.com/qht1003077897/bcf)
 
+为什么会有这个框架？
+=======
+对于涉及到串口、或者tcp业务的中小型软件而言，为了和下位机进行通信，我们经常要先制定一套通信协议，然后双方基于此协议进行协议层的开发，大概会涉及到：协议组装、协议解析、粘包、分包处理，超时处理，业务分发等。那么我们能否将这几部分固化下来，将这部分功能封装到一个框架或者库中，对于后续开发类似的软件，都使用这个库的功能，是不是可以减少我们大部分时间呢？
+
+基于以上诉求，便引申出bcf的功能列表：
 ## Features
 * 跨平台 (Linux | Windows)
-* 内置协议（定长协议、头部指定长度协议），对于内置协议，bcf内部处理粘包、分包等情况。当然也支持扩展协议.详见example/customprotocol
-* 自带qt串口和qtcp通信后端，当然也支持用户扩展，比如使用asio的tcp或者boost的串口等等.详见example/customchannel
-* 支持串口Ymodel发送文件，可以给xshell发送测试.
-* 支持
+* 内置协议（定长协议、指定头部长度协议），对于内置协议，bcf在内部会处理粘包、分包等情况，保证回调给用户的协议model都是完整的一包数据。当然也支持扩展协议.详见example/customprotocol
+* 自带qt串口和qtcp通信后端（如果你是QT软件，直接使用bcf自带的串口类或者tcp类就好了）。当然也支持用户扩展，比如使用asio的tcp或者boost的串口等等.详见example/customchannel
+* 支持串口Ymodel发送文件，可以给xshell发送文件进行测试.
 
 ## Documentation
 - [简体中文](https://github.com/qht1003077897/bcf/blob/master/docs/main.zh-cn.md)
