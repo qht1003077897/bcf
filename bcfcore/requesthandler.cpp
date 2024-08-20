@@ -1,9 +1,9 @@
-﻿#include <channelmanager.h>
+﻿#include <private/channelmanager.h>
 #include <base/globaldefine.h>
 #include <base/timer.h>
-#include <protocolbuildermanager.h>
-#include <protocolparsermanager.h>
-#include "filetransmithelper.h"
+#include <private/protocolbuildermanager.h>
+#include <private/protocolparsermanager.h>
+#include "private/filetransmithelper.h"
 #include "requesthandler.h"
 using namespace bcf;
 

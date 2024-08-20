@@ -1,7 +1,9 @@
-﻿#include <QSerialPort>
+﻿#include "serialchannel_qt.h"
+
+#ifdef BCF_USE_QT_SERIALPORT
+#include <QSerialPort>
 #include <QDebug>
 #include <QTimer>
-#include "serialchannel.h"
 using namespace bcf;
 
 SerialChannel::SerialChannel(QObject* parent):
@@ -157,3 +159,4 @@ void SerialChannel::onErrorOccurred(int error)
         m_errorCallback(m_pSerialPort->errorString().toStdString());
     }
 }
+#endif

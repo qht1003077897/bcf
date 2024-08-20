@@ -1,4 +1,4 @@
-﻿#include "protocolparsermanager.h"
+﻿#include "private/protocolparsermanager.h"
 using namespace bcf;
 
 void ProtocolParserManager::addParser(const std::shared_ptr<IProtocolParser>& parser)

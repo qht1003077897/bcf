@@ -1,4 +1,4 @@
-﻿#include "protocolbuildermanager.h"
+﻿#include "private/protocolbuildermanager.h"
 using namespace bcf;
 
 void ProtocolBuilderManager::addBuilder(std::shared_ptr<IProtocolBuilder> newBuilder)

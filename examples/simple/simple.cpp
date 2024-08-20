@@ -1,10 +1,6 @@
 ﻿#include <QCoreApplication>
 #include <QDebug>
 #include "bcf.h"
-#ifdef BCF_USE_QT_SERIALPORT
-    #include <serialchannel_qt.h>
-#endif
-
 using namespace std;
 
 #define CHANNEL_ID_SERIALPORT 0
@@ -62,7 +58,6 @@ int main(int argc, char* argv[])
                                              std::make_shared<UserProtocolBuilder>()})
                       .withProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
     .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
-#ifdef BCF_USE_QT_SERIALPORT
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
         auto channel = std::make_shared<bcf::SerialChannel>();
 //        channel->setRawDataCallback([](std::shared_ptr<bb::ByteBuffer> bb) {
@@ -71,7 +66,6 @@ int main(int argc, char* argv[])
         channel->setPortName("COM2");
         return channel;
     })
-#endif
     .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
         qDebug() <<  "withReceiveData protocolType:"  << model->protocolType();
         if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {

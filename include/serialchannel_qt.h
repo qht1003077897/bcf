@@ -1,4 +1,7 @@
 ﻿#pragma once
+#include <config.h>
+
+#ifdef BCF_USE_QT_SERIALPORT
 #include <QObject>
 #include <ichannel.h>
 #include <bcfexport.h>
@@ -45,4 +48,5 @@ protected:
 private:
     QSerialPort* m_pSerialPort = nullptr;
 };
-}       // namespace bcf
+}// namespace bcf
+#endif //BCF_USE_QT_SERIALPORT

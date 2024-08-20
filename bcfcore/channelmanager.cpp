@@ -1,4 +1,4 @@
-﻿#include "channelmanager.h"
+﻿#include "private/channelmanager.h"
 using namespace bcf;
 
 void ChannelManager::addChannel(int id, std::shared_ptr<IChannel> channel)
