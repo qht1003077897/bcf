@@ -48,12 +48,12 @@ OR：
 * [Examples](#examples)
 Examples
 ----------------------------
-* [The simplest demonstration of using BCF](https://github.com/IronsDu/dodo/blob/master/examples/simple/simple.cpp)
-* [How to send and receive raw raw raw stream data](https://github.com/IronsDu/dodo/blob/master/examples/rawdata/rawdata.cpp)
-* [Custom channel](https://github.com/IronsDu/dodo/blob/master/examples/customchannel/customchannel.cpp)
-* [Custom protocol](https://github.com/IronsDu/dodo/blob/master/examples/customprotocol/customprotocol.cpp)
-* [Sending files using the ymodel protocol](https://github.com/IronsDu/dodo/blob/master/examples/ymodel/ymodel.cpp)
-* more examples please see [examples](https://github.com/IronsDu/dodo/tree/master/examples);
+* [The simplest demonstration of using BCF](https://github.com/qht1003077897/bcf/blob/master/examples/simple/simple.cpp)
+* [How to send and receive raw raw raw stream data](https://github.com/qht1003077897/bcf/blob/master/examples/rawdata/rawdata.cpp)
+* [Custom channel](https://github.com/qht1003077897/bcf/blob/master/examples/customchannel/customchannel.cpp)
+* [Custom protocol](https://github.com/qht1003077897/bcf/blob/master/examples/customprotocol/customprotocol.cpp)
+* [Sending files using the ymodel protocol](https://github.com/qht1003077897/bcf/blob/master/examples/ymodel/ymodel.cpp)
+* more examples please see [examples](https://github.com/qht1003077897/bcf/blob/master/examples);
 
 Users
 ----------------------------
