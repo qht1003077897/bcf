@@ -19,10 +19,6 @@ int main(int argc, char* argv[])
     std::shared_ptr<bcf::IChannel> tmpChannel;
 
     auto requestPtr = bcf::RequestHandlerBuilder()
-                      .withTimeOut(10'000)
-                      .registProtocolBuilders({std::make_shared<ByHeadProtocolBuilder>()})
-                      .registProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
-    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
     .withChannel(CHANNEL_ID_SERIALPORT, [ &tmpChannel ]() {
         tmpChannel  = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
         //New Line
@@ -30,15 +26,6 @@ int main(int argc, char* argv[])
             bb->printHex();
         });
         return tmpChannel;
-    })
-    .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
-        if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {
-            auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(model);
-            if (bmodel) {
-                qDebug() <<  "withReceiveData retmodel seq: " << bmodel->seq;
-                qDebug() << "withReceiveData retmodel body:" << QString::fromStdString(bmodel->body());
-            }
-        }
     })
     .withFailedCallback([]() {
         std::cerr <<  "withFailedCallback"  ;
@@ -48,9 +35,9 @@ int main(int argc, char* argv[])
     })
     .build();
     requestPtr->connect();
+
     assert(tmpChannel != nullptr);
     std::string str("this is 1 times request");
     tmpChannel->send(str.data(), str.length());
-
     return app.exec();
 }
