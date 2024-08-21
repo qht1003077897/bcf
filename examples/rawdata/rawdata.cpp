@@ -15,15 +15,21 @@ using namespace std;
 int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
+    //New Line
+    std::shared_ptr<bcf::IChannel> tmpChannel;
 
     auto requestPtr = bcf::RequestHandlerBuilder()
                       .withTimeOut(10'000)
                       .registProtocolBuilders({std::make_shared<ByHeadProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
     .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
-    .withChannel(CHANNEL_ID_SERIALPORT, []() {
-        auto channel = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
-        return channel;
+    .withChannel(CHANNEL_ID_SERIALPORT, [ &tmpChannel ]() {
+        tmpChannel  = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
+        //New Line
+        tmpChannel->setRawDataCallback([](std::shared_ptr<bb::ByteBuffer> bb) {
+            bb->printHex();
+        });
+        return tmpChannel;
     })
     .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
         if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {
@@ -42,20 +48,9 @@ int main(int argc, char* argv[])
     })
     .build();
     requestPtr->connect();
-
-    std::shared_ptr<bcf::ByHeadProtocolModel> reqmodel = std::make_shared<bcf::ByHeadProtocolModel>();
-    reqmodel->seq = bcf::util::getNextSeq();
-    reqmodel->cmd = CMD_REQ_NAME;
-    reqmodel->setBody(std::string("this is " +  std::to_string(reqmodel->seq) + " times request"));
-
-    requestPtr->request(reqmodel, [](bcf::ErrorCode code,
-    std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
-        auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(retmodel);
-        if (bmodel) {
-            qDebug() << "retmodel seq:" << bmodel->seq;
-            qDebug() << "retmodel body:" <<  QString::fromStdString(bmodel->body());
-        }
-    });
+    assert(tmpChannel != nullptr);
+    std::string str("this is 1 times request");
+    tmpChannel->send(str.data(), str.length());
 
     return app.exec();
 }

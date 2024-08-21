@@ -15,7 +15,7 @@ class BCF_EXPORT SerialChannel_QT : public QObject, public IChannel
     Q_OBJECT
 
 public:
-    explicit SerialChannel_QT(QObject* parent = nullptr);
+    explicit SerialChannel_QT(const std::string& name, QObject* parent = nullptr);
     virtual ~SerialChannel_QT();
 
     void setPortName(const std::string& name);

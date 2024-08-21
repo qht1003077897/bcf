@@ -22,8 +22,7 @@ int main(int argc, char* argv[])
                       .registProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
     .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
-        auto channel = std::make_shared<bcf::SerialChannel_QT>();  //使用bcf内部的串口通道类
-        channel->setPortName("COM2");
+        auto channel = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
         return channel;
     })
     .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
@@ -43,7 +42,7 @@ int main(int argc, char* argv[])
     })
     .build();
     requestPtr->connect();
-
+    //New Line
     std::string filename = "C:\\Users\\bridge\\Desktop\\image.bin";//902 字节
     requestPtr->sendFileWithYModel(filename, [](int progress) {
         qDebug() << "progress: " << progress ;

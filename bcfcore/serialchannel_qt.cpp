@@ -6,10 +6,11 @@
 #include <QTimer>
 using namespace bcf;
 
-SerialChannel_QT::SerialChannel_QT(QObject* parent):
+SerialChannel_QT::SerialChannel_QT(const std::string& name, QObject* parent):
     QObject(parent)
 {
     m_pSerialPort = new QSerialPort(this);
+    setPortName(name);
     setBaudRate(QSerialPort::BaudRate::Baud115200);
     setDataBits(QSerialPort::DataBits::Data8);
     setParity(QSerialPort::Parity::NoParity);
