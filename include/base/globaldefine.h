@@ -6,6 +6,9 @@
 //接收缓冲区默认大小
 #define DEFAULT_RECV_BUFFER_SIZE 16*1024
 
+//定长协议默认的单帧数据大小(字节)
+#define DEFAULT_FIXED_LENGTH_FRAME_SIZE 1024
+
 //默认的异步chllback回调超时时间，此超时时间不是tcp的alive时间，而是在此时间内，对应的seq没有回复，则认为此条请求超时，则对应的callback会被丢弃
 #define DEFAULT_TIME_OUT_MILLSCENDS 10'000
 

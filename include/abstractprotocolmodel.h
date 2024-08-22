@@ -1,60 +1,42 @@
 ﻿#pragma once
-#include <base/platform.hpp>
-#include <string>
+#include <stdint.h>
+#include <iostream>
+#include <memory>
+#include <stdexcept>
 
 namespace bcf
 {
-//-----------------unpack---------------------------------------------
 enum PackMode {
     UNPACK_MODE_NONE        = 0,
-    UNPACK_BY_FIXED_LENGTH  = 1,    // Not recommended 定长解包
-    UNPACK_BY_DELIMITER     = 2,    // Suitable for text protocol   分隔符解包
-    UNPACK_BY_LENGTH_FIELD  = 3,    // Suitable for binary protocol head+body
-    UNPACK_BY_USER  = 4,            // 如何扩展: UNPACK_BY_USER,UNPACK_BY_USER+1 UNPACK_BY_USER+2
+    UNPACK_BY_FIXED_LENGTH  = 1,    // Not recommended,定长协议报文, such as : fixedlengthprotocol.h
+    UNPACK_BY_DELIMITER     = 2,    // Not recommended,分隔符协议报文,BCF 未实现 (Not implemented)
+    UNPACK_BY_LENGTH_FIELD  = 3,    // recommended,Suitable for binary protocol head+body, such as : byheadprotocol.h
+    UNPACK_BY_USER  = 4,            // how to expand: UNPACK_BY_USER,UNPACK_BY_USER+1 UNPACK_BY_USER+2,such as : examples/customprotocol.h
     UNPACK_BY_USERMAX = 100
 };
 
 class AbstractProtocolModel
 {
 public:
+    // 禁用拷贝构造函数和赋值运算符
+    AbstractProtocolModel(const AbstractProtocolModel&) = delete;
+    AbstractProtocolModel& operator=(const AbstractProtocolModel&) = delete;
     uint8_t type = PackMode::UNPACK_MODE_NONE;
     uint32_t seq = 0;
 
     virtual PackMode protocolType() = 0;
-};
 
-class ByHeadProtocolModel : public AbstractProtocolModel
-{
-public:
-    /**
-    bcf要求【协议类型】和【会话唯一序列号】必须存在,seq后面的内容可以自定义
-    协议类型\会话唯一序列号\业务ID\body长度
-    |*****************head*******************|*****body*****|
-    |    type  |   seq   |  cmd    | length  |     XXX      |
-    |    1byte |  4byte  | 4byte   | 4bytes  | length bytes |
-    |****************************************|**************|
-    **/
-    uint32_t cmd = 0;
-    uint32_t length = 0;
-    constexpr static uint16_t body_offset = sizeof(type) + sizeof(seq) + sizeof(cmd) + sizeof(length);
-
-    void setBody(const std::string& body)
+    template <typename Derived, typename... Args>
+    static std::unique_ptr<Derived> create(Args&&... args)
     {
-        m_body = body;
-        length = m_body.length();
+        return std::unique_ptr<Derived>(new Derived(std::forward<Args>(args)...));
     }
-    const std::string& body()
-    {
-        return m_body;
-    };
-    virtual PackMode protocolType() override
-    {
-        return PackMode::UNPACK_BY_LENGTH_FIELD;
-    };
-    //e.g. json or std::string
-private:
-    std::string m_body;
+
+protected:
+    // 受保护的构造函数，只能被派生类和工厂函数访问
+    AbstractProtocolModel() {}
 };
+
 
 class ByDelimiterProtocolModel : public AbstractProtocolModel
 {
@@ -62,15 +44,6 @@ class ByDelimiterProtocolModel : public AbstractProtocolModel
     virtual PackMode protocolType() override
     {
         return PackMode::UNPACK_BY_DELIMITER;
-    };
-};
-
-class ByFixedProtocolModel : AbstractProtocolModel
-{
-
-    virtual PackMode protocolType() override
-    {
-        return PackMode::UNPACK_BY_FIXED_LENGTH;
     };
 };
 }

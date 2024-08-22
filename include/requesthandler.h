@@ -91,7 +91,7 @@ public:
     /**
     * @brief bcf的核心接口. 构建自己的协议Model，请求的结果会异步返回到RequestCallback回调，\n
     * 返回的数据类型是 std::shared_ptr<bcf::AbstractProtocolModel>，需要用户转换成 withProtocolParsers 接口所设置的协议解析器对应的协议模型。\n
-    * 如果请求超时，即超过了 withTimeOut() 所配置的超时时间，则 RequestCallback 返回的 ErrorCode 为 TIME_OUT,且bcf内部会丢弃这个请求
+    * 如果请求超时，即超过了 withTimeOut 所配置的超时时间，则 RequestCallback 返回的 ErrorCode 为 TIME_OUT,且bcf内部会丢弃这个请求
     * @example examples/simple.cpp
     */
     void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback&&);

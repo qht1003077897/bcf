@@ -1,5 +1,10 @@
-Bcf
+﻿Bcf
 =======
+
+**>NOTE: Bcf is not a network library, but an easy-to-use protocol communication framework !!!**
+
+--- 
+
 A basic protocol communication framework based on C++11 and QT5 (serial and TCP), with multiple built-in protocols, ready to use out of the box.
 The focus of this library is to create a simple and easy-to-use protocol communication layer that supports custom serial and TCP backends, so the emphasis is not on a TCP library or serial library. \Of course, if you want, you can also use it as a serial port library or TCP library.
 By using this library, you can save 80% of your work when developing serial communication software or TCP client software.

@@ -4,6 +4,40 @@
 #include "iprotocolparser.h"
 #include <base/bytebuffer.hpp>
 #include <base/endian.hpp>
+namespace bcf
+{
+class ByHeadProtocolModel : public bcf::AbstractProtocolModel
+{
+public:
+    /**
+    bcf要求【协议类型】和【会话唯一序列号】必须存在,seq后面的内容可以自定义
+    协议类型\会话唯一序列号\业务ID\body长度
+    |*****************head*******************|*****body*****|
+    |    type  |   seq   |  cmd    | length  |     XXX      |
+    |    1byte |  4byte  | 4byte   | 4bytes  | length bytes |
+    |****************************************|**************|
+    **/
+    uint32_t cmd = 0;
+    uint32_t length = 0;
+    constexpr static uint16_t body_offset = sizeof(type) + sizeof(seq) + sizeof(cmd) + sizeof(length);
+
+    void setBody(const std::string& body)
+    {
+        m_body = body;
+        length = m_body.length();
+    }
+    const std::string& body()
+    {
+        return m_body;
+    };
+    virtual bcf::PackMode protocolType() override
+    {
+        return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
+    };
+    //e.g. json or std::string
+private:
+    std::string m_body;
+};
 
 class ByHeadProtocolBuilder : public bcf::IProtocolBuilder
 {
@@ -113,3 +147,4 @@ public:
         parse(callback);
     };
 };
+}

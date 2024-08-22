@@ -18,8 +18,8 @@ int main(int argc, char* argv[])
 
     auto requestPtr = bcf::RequestHandlerBuilder()
                       .withTimeOut(10'000)
-                      .registProtocolBuilders({std::make_shared<ByHeadProtocolBuilder>()})
-                      .registProtocolParsers({std::make_shared<ByHeadProtocolParser>()})
+                      .registProtocolBuilders({std::make_shared<bcf::ByHeadProtocolBuilder>()})
+                      .registProtocolParsers({std::make_shared<bcf::ByHeadProtocolParser>()})
     .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
         auto channel = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类

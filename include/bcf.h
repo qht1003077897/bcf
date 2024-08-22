@@ -2,7 +2,7 @@
 
 #include <config.h>
 #include <base/globaldefine.h>
-#include <protocolparser/byheadprotocolparser.h>
+#include <protocolparser/byheadprotocol.h>
 #include <ichannel.h>
 #include <requesthandler.h>
 #include <abstractprotocolmodel.h>

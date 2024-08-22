@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <memory>
+#include <base/platform.hpp>
 #include <base/bytebuffer.hpp>
 #include <abstractprotocolmodel.h>
 
