@@ -8,7 +8,7 @@
 class ByHeadProtocolBuilder : public bcf::IProtocolBuilder
 {
 public:
-    ByHeadProtocolBuilder(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): m_endian(
+    ByHeadProtocolBuilder(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): IProtocolBuilder(
             endian) {};
 
 protected:
@@ -26,15 +26,15 @@ protected:
         }
         uint8_t type = getType();
         uint32_t bigSeq = model->seq;
-        uint16_t bigCmd = model->cmd;
+        uint32_t bigCmd = model->cmd;
         uint32_t bigLen = model->length;
         if (m_endian == bcf::PackEndian::USE_BIG_ENDIAN) {
             bigSeq = htobe32(model->seq);
-            bigCmd = htobe16(model->cmd);
+            bigCmd = htobe32(model->cmd);
             bigLen = htobe32(model->length);
         } else if (m_endian == bcf::PackEndian::USE_LITTEL_ENDIAN) {
             bigSeq = htole32(model->seq);
-            bigCmd = htole16(model->cmd);
+            bigCmd = htole32(model->cmd);
             bigLen = htole32(model->length);
         }
 
@@ -42,7 +42,7 @@ protected:
 
         ptr->put(type);
         ptr->putInt(bigSeq);
-        ptr->putShort(bigCmd);
+        ptr->putInt(bigCmd);
         ptr->putInt(bigLen);
         ptr->putBytes((uint8_t*)model->body().c_str(), model->body().length());
 #ifndef NDEBUG
@@ -50,33 +50,17 @@ protected:
 #endif
         return ptr;
     };
-private:
-    bcf::PackEndian m_endian;
 };
 
 class ByHeadProtocolParser : public bcf::IProtocolParser
 {
 public:
-    ByHeadProtocolParser(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): m_endian(endian) {};
+    ByHeadProtocolParser(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): IProtocolParser(
+            endian) {};
 
     virtual bcf::PackMode getType()const override
     {
         return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
-    };
-
-    bool sniff(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr) override
-    {
-        m_buffer->put(byteBufferPtr.get());
-
-#ifndef NDEBUG
-        m_buffer->printHex();
-#endif
-        uint8_t type = m_buffer->peek();
-        if (type != getType()) {
-            return false;
-        }
-
-        return true;
     };
 
     //使用者自己实现parse函数，回调的目的时因为需要递归callback，解决粘包产生的多包问题
@@ -93,16 +77,16 @@ public:
 
         uint8_t type = m_buffer->getChar();
         uint32_t seq = m_buffer->getInt();
-        uint16_t cmd = m_buffer->getShort();
+        uint16_t cmd = m_buffer->getInt();
         uint32_t bodylength = m_buffer->getInt();
 
         if (m_endian == bcf::PackEndian::USE_BIG_ENDIAN) {
             seq = be32toh(seq);
-            cmd = be16toh(cmd);
+            cmd = be32toh(cmd);
             bodylength = be32toh(bodylength);
         } else if (m_endian == bcf::PackEndian::USE_LITTEL_ENDIAN) {
             seq = le32toh(seq);
-            cmd = le16toh(cmd);
+            cmd = le32toh(cmd);
             bodylength = le32toh(bodylength);
         }
 
@@ -128,8 +112,4 @@ public:
 
         parse(callback);
     };
-
-private:
-    bcf::PackEndian m_endian;
-    std::shared_ptr<bb::ByteBuffer> m_buffer = std::make_shared<bb::ByteBuffer>();
 };

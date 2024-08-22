@@ -84,7 +84,8 @@ private:
     bcf::AbandonCallback m_abcallback;
 };
 
-class BCF_EXPORT RequestHandler: public bcf::NonCopyable
+class BCF_EXPORT RequestHandler: public bcf::NonCopyable,
+    public std::enable_shared_from_this<RequestHandler>
 {
 public:
     /**
@@ -106,6 +107,7 @@ public:
     * @brief 建立IO连接
     */
     void connect();
+
 private:
     friend class RequestHandlerBuilder;
     RequestHandler();

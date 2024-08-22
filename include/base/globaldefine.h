@@ -37,7 +37,8 @@ enum ErrorCode {
     CHANNEL_CLOSE = 0x0001,            //通道错误
     PROTOCOL_NOT_EXIST = 0x0002,       //协议错误
     TIME_OUT = 0x0003,                 //(通信)超时
-    UNKOWNED_DATA = 0x0004,             //没有找到seq的数据，可能时底层主动上报的数据
+    UNKOWNED_DATA = 0x0004,            //没有找到seq的数据，可能时底层主动上报的数据
+    ERROR_THREAD_AFFINITY = 0x0005,    //线程亲和性错误，比如qt的io类发送数据和接收数据都要求QThread
 };
 
 enum TransmitStatus {
@@ -51,9 +52,11 @@ enum TransmitStatus {
 };
 
 class AbstractProtocolModel;
+class RequestHandler;
 using RequestCallback =
     std::function<void(bcf::ErrorCode, std::shared_ptr<bcf::AbstractProtocolModel>)>;
-using ReceiveCallback = std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
+using ReceiveCallback =
+    std::function<void(std::shared_ptr<RequestHandler>, std::shared_ptr<bcf::AbstractProtocolModel>)>;
 using AbandonCallback =
     std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
 

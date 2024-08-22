@@ -1,9 +1,10 @@
 ﻿#include "SerialChannel_qt.h"
-
+#include "base/exception.hpp"
 #ifdef BCF_USE_QT_SERIALPORT
 #include <QSerialPort>
 #include <QDebug>
 #include <QTimer>
+#include <QThread>
 using namespace bcf;
 
 SerialChannel_QT::SerialChannel_QT(const std::string& name, QObject* parent):
@@ -85,6 +86,12 @@ bool SerialChannel_QT::closeInternal()
 
 int64_t SerialChannel_QT::send(const char* data, uint32_t len)
 {
+    QThread* thread = QThread::currentThread();
+    if (!thread) {
+        throw BcfCommonException("SerialChannel_QT::send can only be used with QThread");
+        return -2;
+    }
+
     return m_pSerialPort->write((char*)data, len);
 }
 

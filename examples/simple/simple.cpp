@@ -25,7 +25,8 @@ int main(int argc, char* argv[])
         auto channel = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
         return channel;
     })
-    .withReceiveData([](std::shared_ptr<bcf::AbstractProtocolModel> model) {
+    .withReceiveData([](std::shared_ptr<bcf::RequestHandler> handler,
+    std::shared_ptr<bcf::AbstractProtocolModel> model) {
         if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {
             auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(model);
             if (bmodel) {

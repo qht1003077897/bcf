@@ -1,4 +1,5 @@
-﻿#include <base/timer.h>
+﻿#include <QObject>
+#include <base/timer.h>
 #include <base/globaldefine.h>
 #include <private/channelmanager.h>
 #include <private/protocolbuildermanager.h>
@@ -6,23 +7,28 @@
 #include "private/filetransmithelper.h"
 #include "requesthandler.h"
 using namespace bcf;
-
-class RequestHandler::RequestHandlerPrivate
+Q_DECLARE_METATYPE(std::shared_ptr<bcf::AbstractProtocolModel>);
+class RequestHandler::RequestHandlerPrivate: public QObject
 {
+    Q_OBJECT
 public:
-    RequestHandlerPrivate()
-        : protocolParserManager(std::make_unique<bcf::ProtocolParserManager>())
+    RequestHandlerPrivate(RequestHandler* q)
+        : q_ptr(q)
+        , protocolParserManager(std::make_unique<bcf::ProtocolParserManager>())
         , protocolBuilderManager(std::make_unique<bcf::ProtocolBuilderManager>())
         , m_channelManager(std::make_unique<bcf::ChannelManager>())
-        , m_timer(new bcf::Timer())
         , m_fileTransmitHelper(std::make_unique<bcf::FileTransmitHelper>())
     {
-        startTimeOut();
+        qRegisterMetaType<std::shared_ptr<bcf::AbstractProtocolModel>>("std::shared_ptr<bcf::AbstractProtocolModel>");
+        QObject::connect(&m_timer, &QTimer::timeout, this, &RequestHandlerPrivate::slotTimeout);
+        QObject::connect(this, &RequestHandlerPrivate::signalParseOver, this,
+                         &RequestHandlerPrivate::slotParseOver);
+        m_timer.start(1000);
     };
     ~RequestHandlerPrivate()
     {
         m_isexit = true;
-        m_timer->stop();
+        m_timer.stop();
     };
     void request(std::shared_ptr<bcf::AbstractProtocolModel> model, RequestCallback&& callback);
     void sendFile(const std::string& fileName, const ProgressCallback& pcallback,
@@ -30,8 +36,14 @@ public:
     void sendFileWithYModel(const std::string& fileName, const ProgressCallback& pcallback,
                             const TransmitStatusCallback& tcallback);
     void connect();
+
+signals:
+    void signalParseOver(std::shared_ptr<bcf::AbstractProtocolModel>);
+private slots:
+    void slotTimeout();
+    void slotParseOver(std::shared_ptr<bcf::AbstractProtocolModel>);
+
 private:
-    void startTimeOut();
     void setAbandonCallback(bcf::AbandonCallback && callback);
     void setProtocolBuilders(const
                              std::vector<std::shared_ptr<bcf::IProtocolBuilder>>& protocolBuilders);
@@ -40,16 +52,17 @@ private:
     void receive(bcf::ReceiveCallback&& _callback);
 
 private:
+    RequestHandler* q_ptr;
     friend class RequestHandlerBuilder;
     std::atomic_bool m_isexit;
-    std::mutex m_mtx;
     //key:seq,key:timeout
     std::map<int, std::pair<int32_t, bcf::RequestCallback>> callbacks;
     bcf::AbandonCallback m_abandonCallback;
+    ReceiveCallback m_recvCallback;
     std::unique_ptr<bcf::ProtocolParserManager> protocolParserManager;
     std::unique_ptr<bcf::ProtocolBuilderManager> protocolBuilderManager;
     std::unique_ptr<bcf::ChannelManager> m_channelManager;
-    std::shared_ptr<bcf::Timer> m_timer;
+    QTimer m_timer;
     std::unique_ptr<bcf::FileTransmitHelper> m_fileTransmitHelper;
     ConnectOption m_ConnectOption;
 };
@@ -129,7 +142,7 @@ std::shared_ptr<RequestHandler> RequestHandlerBuilder::build()
 }
 
 RequestHandler::RequestHandler()
-    : d_ptr(std::make_unique<RequestHandlerPrivate>())
+    : d_ptr(std::make_unique<RequestHandlerPrivate>(this))
 {
 }
 
@@ -175,16 +188,16 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
         return;
     }
 
-    {
-        std::unique_lock<std::mutex> l(m_mtx);
-        callbacks.insert(std::make_pair(model->seq,
-                                        std::make_pair(m_ConnectOption.m_timeoutMillSeconds,
-                                                       std::move(callback))));
-    }
-
     auto buf = std::make_unique<uint8_t[]>(buffer->size());
     buffer->getBytes(buf.get(), buffer->size());
-    channel->send((const char*)buf.get(), buffer->size());
+    if (-2 == channel->send((const char * )buf.get(), buffer->size())) {
+        (callback)(bcf::ErrorCode::ERROR_THREAD_AFFINITY, nullptr);
+        return;
+    }
+
+    callbacks.insert(std::make_pair(model->seq,
+                                    std::make_pair(m_ConnectOption.m_timeoutMillSeconds,
+                                                   std::move(callback))));
 }
 
 void RequestHandler::RequestHandlerPrivate::sendFile(const std::string& fileName,
@@ -206,7 +219,8 @@ void RequestHandler::RequestHandlerPrivate::sendFileWithYModel(const std::string
 ////如果能匹配到seq,则直接callback,如果匹配不到,则是主动上报的,交给receive调用点进行转发处理
 void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
 {
-    DataCallback call =  [ =, tmpCallback = std::move(_callback)](std::shared_ptr<bb::ByteBuffer>
+    m_recvCallback = std::move(_callback);
+    DataCallback call =  [ = ](std::shared_ptr<bb::ByteBuffer>
     data) {
 
         protocolParserManager->parseByAll(data, [ = ](bcf::IProtocolParser::ParserState
@@ -223,21 +237,7 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
                 return;
             }
 
-            {
-                int key = model->seq;
-                std::unique_lock<std::mutex> l(m_mtx);
-                const auto& itr = callbacks.find(key);
-                if (itr != callbacks.end()) {
-                    if (nullptr != itr->second.second) {
-                        itr->second.second(bcf::ErrorCode::OK, model);
-                    }
-                    callbacks.erase(itr);
-                    return;
-                }
-            }
-
-            std::cout << "not find seq" << std::endl;
-            tmpCallback(model);
+            emit signalParseOver(model);
         });
     };
 
@@ -259,7 +259,6 @@ void RequestHandler::RequestHandlerPrivate::setProtocolBuilders(const
     }
 }
 
-
 void RequestHandler::RequestHandlerPrivate::setProtocolParsers(const
                                                                std::vector<std::shared_ptr<bcf::IProtocolParser>>& protocolParsers)
 {
@@ -270,7 +269,7 @@ void RequestHandler::RequestHandlerPrivate::setProtocolParsers(const
 
 void RequestHandler::RequestHandlerPrivate::connect()
 {
-    auto channel =  m_channelManager->CreateChannel(m_ConnectOption.m_channelid);
+    auto channel = m_channelManager->CreateChannel(m_ConnectOption.m_channelid);
     channel->setMaxRecvBufferSize(m_ConnectOption.m_maxRecvBufferSize);
     channel->setFailedCallback(std::move(m_ConnectOption.m_FailCallback));
     channel->setConnectionCompletedCallback(std::move(m_ConnectOption.m_CompleteCallback));
@@ -280,26 +279,41 @@ void RequestHandler::RequestHandlerPrivate::connect()
     }
 }
 
-void RequestHandler::RequestHandlerPrivate::startTimeOut()
+void RequestHandler::RequestHandlerPrivate::slotTimeout()
 {
-    m_timer->setInterval([this]() {
-        {
-            std::unique_lock<std::mutex> l(m_mtx);
-            auto it  = callbacks.begin();
-            while (it != callbacks.end()) {
-                if ( 0 == it->second.first) {
-                    //超时时间减到0
+    auto it  = callbacks.begin();
+    while (it != callbacks.end()) {
+        if ( 0 == it->second.first) {
+            //超时时间减到0
 
-                    std::cout << "seq: " << it->first << "timeout,remove it!" << std::endl;
-                    std::bind(it->second.second, bcf::ErrorCode::TIME_OUT, nullptr)();
-                    callbacks.erase(it++);
-                    continue;
-                }
-
-                //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
-                it->second.first = std::max(0,  it->second.first - 1000);
-                it++;
-            }
+            std::cout << "seq: " << it->first << "timeout,remove it!" << std::endl;
+            std::bind(it->second.second, bcf::ErrorCode::TIME_OUT, nullptr)();
+            callbacks.erase(it++);
+            continue;
         }
-    }, 1000);
+
+        //每秒递减1,直到被callback完成移除或超时移除 //TODO 优化:支持毫秒级定时器
+        it->second.first = std::max(0,  it->second.first - 1000);
+        it++;
+    }
 }
+
+void RequestHandler::RequestHandlerPrivate::slotParseOver(std::shared_ptr<AbstractProtocolModel>
+                                                          model)
+{
+    int key = model->seq;
+    const auto& itr = callbacks.find(key);
+    if (itr != callbacks.end()) {
+        if (nullptr != itr->second.second) {
+            itr->second.second(bcf::ErrorCode::OK, model);
+        }
+        callbacks.erase(itr);
+        return;
+    }
+
+    std::cout << "not find seq" << std::endl;
+    auto handler = q_ptr->shared_from_this();
+    m_recvCallback(handler, model);
+}
+
+#include "requesthandler.moc"
