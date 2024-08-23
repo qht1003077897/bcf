@@ -20,17 +20,11 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 # Source files.
 FILE(GLOB_RECURSE SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp")
-#if(NOT BCF_USE_QT_SERIALPORT)
-#list(REMOVE_ITEM SOURCES "serialchannel_qt.cpp")
-#endif()
 
 # Header files.
 FILE(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
                           "${CMAKE_SOURCE_DIR}/include/*.h"
                           "${CMAKE_SOURCE_DIR}/include/*.hpp")
-#if(NOT BCF_USE_QT_SERIALPORT)
-#list(REMOVE_ITEM HEADERS "serialchannel_qt.h")
-#endif()
 
 add_library(bcf SHARED
   ${HEADERS}
@@ -43,7 +37,7 @@ if(BCF_USE_QT_SERIALPORT)
     set(LINK_BCF ${LINK_BCF} Qt${QT_VERSION_MAJOR}::SerialPort)
 endif()
 
-if(BCF_USE_TCP)
+if(BCF_USE_QT_TCP)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Network)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
      set(LINK_BCF ${LINK_BCF} Qt${QT_VERSION_MAJOR}::Network)

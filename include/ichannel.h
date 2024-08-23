@@ -18,10 +18,10 @@ using ErrorCallback = std::function<void(const std::string&)>;
 using GenChannelIDFunc = std::function<int()>;
 using CreateChannelFunc = std::function<std::shared_ptr<bcf::IChannel>()>;
 using ConnectionCompletedCallback = std::function<void(std::shared_ptr<bcf::IChannel>)>;
-using ConnectionFailCallback = std::function<void()>;
+using ConnectionFailCallback = std::function<void(int)>;
 using ByteBufferPtr = std::shared_ptr<bb::ByteBuffer>;
 
-enum class ChannelState {
+enum class ChannelState : uint16_t {
     Idel = 0x01,
     Opened,
     Closed,
@@ -62,7 +62,7 @@ public:
     {
         return m_channelID;
     };
-    bool open();
+    void open();
     void close();
 
     /**
@@ -121,7 +121,7 @@ public:
 
 protected:
     //必须重写
-    virtual bool openInternal() = 0;
+    virtual void openInternal() = 0;
     virtual bool closeInternal() = 0;
 
 private:

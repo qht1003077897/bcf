@@ -12,14 +12,9 @@ IChannel::~IChannel()
     }
 }
 
-bool IChannel::open()
+void IChannel::open()
 {
-    bool res = openInternal();
-    if (res) {
-        startUserCallbackThread();
-        m_state = ChannelState::Opened;
-    }
-    return res;
+    openInternal();
 }
 
 void IChannel::close()
@@ -47,12 +42,20 @@ void IChannel::setErrorCallback(ErrorCallback&& errorCallback)
 
 void IChannel::setFailedCallback(ConnectionFailCallback &&callback)
 {
-    m_FailCallback = std::move(callback);
+    m_FailCallback = [call = std::move(callback)](int errorcode) {
+        std::cout << "Opened fail" << std::endl;
+        call(errorcode);
+    };
 }
 
 void IChannel::setConnectionCompletedCallback(ConnectionCompletedCallback &&callback)
 {
-    m_CompleteCallback = std::move(callback);
+    m_CompleteCallback = [ =, call = std::move(callback)](std::shared_ptr<bcf::IChannel> c) {
+        std::cout << "Opened success" << std::endl;
+        startUserCallbackThread();
+        m_state = ChannelState::Opened;
+        call(c);
+    };
 }
 
 void IChannel::pushData2Bcf(ByteBufferPtr&& data)

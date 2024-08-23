@@ -7,6 +7,9 @@
 #include "private/filetransmithelper.h"
 #include "requesthandler.h"
 using namespace bcf;
+
+#define TIMER_INTERVAL_MILLS 1'000
+
 Q_DECLARE_METATYPE(std::shared_ptr<bcf::AbstractProtocolModel>);
 class RequestHandler::RequestHandlerPrivate: public QObject
 {
@@ -23,7 +26,7 @@ public:
         QObject::connect(&m_timer, &QTimer::timeout, this, &RequestHandlerPrivate::slotTimeout);
         QObject::connect(this, &RequestHandlerPrivate::signalParseOver, this,
                          &RequestHandlerPrivate::slotParseOver);
-        m_timer.start(1000);
+        m_timer.start(TIMER_INTERVAL_MILLS);
     };
     ~RequestHandlerPrivate()
     {
@@ -44,7 +47,6 @@ private slots:
     void slotParseOver(std::shared_ptr<bcf::AbstractProtocolModel>);
 
 private:
-    void setAbandonCallback(bcf::AbandonCallback && callback);
     void setProtocolBuilders(const
                              std::vector<std::shared_ptr<bcf::IProtocolBuilder>>& protocolBuilders);
     void setProtocolParsers(const
@@ -57,7 +59,6 @@ private:
     std::atomic_bool m_isexit;
     //key:seq,key:timeout
     std::map<int, std::pair<int32_t, bcf::RequestCallback>> callbacks;
-    bcf::AbandonCallback m_abandonCallback;
     ReceiveCallback m_recvCallback;
     std::unique_ptr<bcf::ProtocolParserManager> protocolParserManager;
     std::unique_ptr<bcf::ProtocolBuilderManager> protocolBuilderManager;
@@ -79,12 +80,6 @@ RequestHandlerBuilder& RequestHandlerBuilder::withTimeOut(int timeoutMillSeconds
 RequestHandlerBuilder& RequestHandlerBuilder::withMaxRecvBufferSize(int maxRecvBufferSize)
 {
     m_ConnectOption.m_maxRecvBufferSize = maxRecvBufferSize;
-    return *this;
-}
-
-RequestHandlerBuilder& RequestHandlerBuilder::withAbandonCallback(bcf::AbandonCallback&& callback)
-{
-    m_abcallback = std::move(callback);
     return *this;
 }
 
@@ -137,7 +132,6 @@ std::shared_ptr<RequestHandler> RequestHandlerBuilder::build()
     m_requestHandler->d_ptr->setProtocolParsers(std::move(m_protocolParsers));
     m_requestHandler->d_ptr->m_channelManager->registerChannel(m_ConnectOption.m_channelid,
                                                                std::move(m_ccfunc));
-    m_requestHandler->d_ptr->setAbandonCallback(std::move(m_abcallback));
     return m_requestHandler;
 }
 
@@ -190,7 +184,7 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
 
     auto buf = std::make_unique<uint8_t[]>(buffer->size());
     buffer->getBytes(buf.get(), buffer->size());
-    if (-2 == channel->send((const char * )buf.get(), buffer->size())) {
+    if (-2 == channel->send((const char* )buf.get(), buffer->size())) {
         (callback)(bcf::ErrorCode::ERROR_THREAD_AFFINITY, nullptr);
         return;
     }
@@ -223,16 +217,9 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
     DataCallback call =  [ = ](std::shared_ptr<bb::ByteBuffer>
     data) {
 
-        protocolParserManager->parseByAll(data, [ = ](bcf::IProtocolParser::ParserState
+        protocolParserManager->parseByAll(data, [ = ](bcf::ParserState
                                                       state,
         std::shared_ptr<bcf::AbstractProtocolModel> model) {
-            if (state == IProtocolParser::Abandon) {
-                if (nullptr != m_abandonCallback) {
-                    m_abandonCallback(model);
-                }
-                return;
-            }
-
             if (nullptr == model) {
                 return;
             }
@@ -244,12 +231,6 @@ void RequestHandler::RequestHandlerPrivate::receive(ReceiveCallback&& _callback)
     const auto channel =  m_channelManager->getChannel(m_ConnectOption.m_channelid);
     channel->setDataCallback(std::move(call));
 };
-
-
-void RequestHandler::RequestHandlerPrivate::setAbandonCallback(AbandonCallback &&callback)
-{
-    m_abandonCallback = std::move(callback);
-}
 
 void RequestHandler::RequestHandlerPrivate::setProtocolBuilders(const
                                                                 std::vector<std::shared_ptr<bcf::IProtocolBuilder>>& protocolBuilders)

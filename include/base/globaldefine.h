@@ -6,9 +6,6 @@
 //接收缓冲区默认大小
 #define DEFAULT_RECV_BUFFER_SIZE 16*1024
 
-//定长协议默认的单帧数据大小(字节)
-#define DEFAULT_FIXED_LENGTH_FRAME_SIZE 1024
-
 //默认的异步chllback回调超时时间，此超时时间不是tcp的alive时间，而是在此时间内，对应的seq没有回复，则认为此条请求超时，则对应的callback会被丢弃
 #define DEFAULT_TIME_OUT_MILLSCENDS 10'000
 
@@ -35,7 +32,7 @@ inline static uint32_t getNextSeq()
 }
 }//namespace bcf::util
 
-enum ErrorCode {
+enum ErrorCode : uint16_t {
     OK = 0x0000,
     CHANNEL_CLOSE = 0x0001,            //通道错误
     PROTOCOL_NOT_EXIST = 0x0002,       //协议错误
@@ -44,7 +41,7 @@ enum ErrorCode {
     ERROR_THREAD_AFFINITY = 0x0005,    //线程亲和性错误，比如qt的io类发送数据和接收数据都要求QThread
 };
 
-enum TransmitStatus {
+enum TransmitStatus : uint8_t {
     StatusEstablishing,
     StatusEstablish,
     StatusTransmit,
@@ -60,8 +57,6 @@ using RequestCallback =
     std::function<void(bcf::ErrorCode, std::shared_ptr<bcf::AbstractProtocolModel>)>;
 using ReceiveCallback =
     std::function<void(std::shared_ptr<RequestHandler>, std::shared_ptr<bcf::AbstractProtocolModel>)>;
-using AbandonCallback =
-    std::function<void(std::shared_ptr<bcf::AbstractProtocolModel>)>;
 
 using ProgressCallback = std::function<void(int)>;
 using TransmitStatusCallback = std::function<void(TransmitStatus)>;

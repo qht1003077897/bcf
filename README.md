@@ -1,7 +1,7 @@
 ﻿Bcf
 =======
 
-**>NOTE: Bcf is not a network library, but an easy-to-use protocol communication framework !!!**
+**>NOTE: Bcf is not a network library, but an easy-to-use client protocol communication framework !!!**
 
 --- 
 
@@ -29,9 +29,9 @@ By using this library, you can save 80% of your work when developing serial comm
 * Clang (Supported C++ 11)
 
 ## Macro
-* BCF_USE_QT_SERIALPORT
+ - BCF_USE_QT_SERIALPORT
   > Use the built-in Qt serial backend of BCF
-* BCF_USE_TCP
+ - BCF_USE_QT_TCP
   > Use the built-in Qt TCP backend of BCF
 
 

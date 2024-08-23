@@ -24,14 +24,13 @@ int main(int argc, char* argv[])
                       .withTimeOut(10'000)
                       .registProtocolBuilders({std::make_shared<CustomProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<CustomProtocolParser > ()})
-    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
 #ifdef BCF_USE_QT_SERIALPORT
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
         return std::make_shared<bcf::SerialChannel_QT>("COM2");
     })
 #endif
-    .withFailedCallback([]() {
-        std::cerr <<  "withFailedCallback"  ;
+    .withFailedCallback([](int errorcode) {
+        std::cerr <<  "withFailedCallback:" << errorcode;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
         qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID() ;

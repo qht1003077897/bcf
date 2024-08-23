@@ -21,7 +21,7 @@ std::shared_ptr<IProtocolParser> ProtocolParserManager::findParse(PackMode id)
 
 void ProtocolParserManager::parseByID(bcf::PackMode id,
                                       const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
-                                      std::function<void(IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>& model)>
+                                      std::function<void(bcf::ParserState, const std::shared_ptr<AbstractProtocolModel>& model)>
                                       _callback)
 {
     const auto itr = parsers.find(id);
@@ -38,7 +38,7 @@ void ProtocolParserManager::parseByID(bcf::PackMode id,
 }
 
 void ProtocolParserManager::parseByAll(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr,
-                                       std::function<void (IProtocolParser::ParserState, const std::shared_ptr<AbstractProtocolModel>&)>
+                                       std::function<void (bcf::ParserState, const std::shared_ptr<AbstractProtocolModel>&)>
                                        _callback)
 {
     for (auto& p : parsers) {

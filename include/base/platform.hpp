@@ -99,10 +99,11 @@
     #endif
 #endif
 
+#include "stdint.h"
 namespace bcf
 {
 // UNPACK_BY_LENGTH_FIELD
-enum PackEndian {
+enum PackEndian : uint16_t {
     USE_HOST_ENDIAN = BYTE_ORDER,
     USE_LITTEL_ENDIAN = LITTLE_ENDIAN,
     USE_BIG_ENDIAN    = BIG_ENDIAN,

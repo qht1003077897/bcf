@@ -11,3 +11,6 @@
 #ifdef BCF_USE_QT_SERIALPORT
     #include <serialchannel_qt.h>
 #endif
+#ifdef BCF_USE_QT_TCP
+    #include <tcpclientchannel_qt.h>
+#endif

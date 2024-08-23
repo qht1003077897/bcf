@@ -1,6 +1,6 @@
 ﻿/**
-*  @FileName    : simple.cpp
-*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的使用方法
+*  @FileName    : simpleserialport.cpp
+*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf 串口使用方法
 */
 
 #include <QCoreApplication>
@@ -20,7 +20,6 @@ int main(int argc, char* argv[])
                       .withTimeOut(10'000)
                       .registProtocolBuilders({std::make_shared<bcf::ByHeadProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<bcf::ByHeadProtocolParser>()})
-    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
         auto channel = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
         return channel;
@@ -35,14 +34,15 @@ int main(int argc, char* argv[])
             }
         }
     })
-    .withFailedCallback([]() {
-        std::cerr <<  "withFailedCallback"  ;
+    .withFailedCallback([](int errorCode) {
+        std::cerr <<  "withFailedCallback:" << errorCode;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
         qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID() ;
     })
     .build();
     requestPtr->connect();
+    //串口是同步连接
 
     std::shared_ptr<bcf::ByHeadProtocolModel> reqmodel = std::make_shared<bcf::ByHeadProtocolModel>();
     reqmodel->seq = bcf::util::getNextSeq();

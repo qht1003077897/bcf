@@ -20,7 +20,6 @@ int main(int argc, char* argv[])
                       .withTimeOut(10'000)
                       .registProtocolBuilders({std::make_shared<bcf::ByHeadProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<bcf::ByHeadProtocolParser>()})
-    .withAbandonCallback([](std::shared_ptr<bcf::AbstractProtocolModel> model) {})
     .withChannel(CHANNEL_ID_SERIALPORT, []() {
         auto channel = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
         return channel;
@@ -35,8 +34,8 @@ int main(int argc, char* argv[])
             }
         }
     })
-    .withFailedCallback([]() {
-        std::cerr <<  "withFailedCallback"  ;
+    .withFailedCallback([](int errorcode) {
+        std::cerr <<  "withFailedCallback:" << errorcode;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
         qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID() ;

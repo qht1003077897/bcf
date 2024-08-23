@@ -26,7 +26,6 @@ SerialChannel_QT::~SerialChannel_QT()
     if (m_pSerialPort->isOpen()) {
         m_pSerialPort->close();
     }
-    m_pSerialPort->deleteLater();
 }
 
 void SerialChannel_QT::setPortName(const std::string& name)
@@ -59,20 +58,19 @@ void SerialChannel_QT::setFlowControl(int flowControl)
     m_pSerialPort->setFlowControl((QSerialPort::FlowControl)flowControl);
 }
 
-bool SerialChannel_QT::openInternal()
+void SerialChannel_QT::openInternal()
 {
     bool res =  m_pSerialPort->open(QSerialPort::ReadWrite);
     qDebug() << "Open:" << m_pSerialPort->portName() << ":" << res;
     if (!res) {
         if (m_FailCallback) {
-            m_FailCallback();
+            m_FailCallback(m_pSerialPort->error());
         }
     } else {
         if (m_CompleteCallback) {
             m_CompleteCallback(getSharedFromThis());
         }
-    }
-    return res;
+    };
 }
 
 bool SerialChannel_QT::closeInternal()

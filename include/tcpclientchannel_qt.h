@@ -1,36 +1,27 @@
 ﻿#pragma once
 #include <config.h>
 
-#ifdef BCF_USE_QT_SERIALPORT
+#ifdef BCF_USE_QT_TCP
 #include <QObject>
 #include <ichannel.h>
 #include <bcfexport.h>
 #include <base/globaldefine.h>
 
-class QSerialPort;
+class QTcpSocket;
 namespace bcf
 {
-class BCF_EXPORT SerialChannel_QT : public QObject, public IChannel
+class BCF_EXPORT TCPClientChannel_QT : public QObject, public IChannel
 {
     Q_OBJECT
 
 public:
-    explicit SerialChannel_QT(const std::string& name, QObject* parent = nullptr);
-    virtual ~SerialChannel_QT();
+    explicit TCPClientChannel_QT(const std::string& ip, int port, QObject* parent = nullptr);
+    virtual ~TCPClientChannel_QT();
 
-    void setPortName(const std::string& name);
-
-    void setBaudRate(int baudRate);
-
-    void setDataBits(int dataBits);
-
-    void setParity(int parity);
-
-    void setStopBits(int stopBits);
-
-    void setFlowControl(int flowControl);
+    void setAddr(const std::string& ip, int port);
 
 private slots:
+    void onConnected();
     void onReceivedData();
     void onErrorOccurred(int error);
 
@@ -46,7 +37,9 @@ protected:
     ByteBufferPtr readAll() override;
     void setMaxRecvBufferSize(int maxRecvBufferSize) override;
 private:
-    QSerialPort* m_pSerialPort = nullptr;
+    QTcpSocket* m_pTcpClient = nullptr;
+    std::string m_ip;
+    int m_port;
 };
 }// namespace bcf
-#endif //BCF_USE_QT_SERIALPORT
+#endif //BCF_USE_QT_TCP

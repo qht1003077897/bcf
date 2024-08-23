@@ -45,7 +45,6 @@ public:
     ByHeadProtocolBuilder(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): IProtocolBuilder(
             endian) {};
 
-protected:
     virtual bcf::PackMode getType()const override
     {
         return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
@@ -79,9 +78,6 @@ protected:
         ptr->putInt(bigCmd);
         ptr->putInt(bigLen);
         ptr->putBytes((uint8_t*)model->body().c_str(), model->body().length());
-#ifndef NDEBUG
-        ptr->printHex();
-#endif
         return ptr;
     };
 };
@@ -99,7 +95,7 @@ public:
 
     //使用者自己实现parse函数，回调的目的时因为需要递归callback，解决粘包产生的多包问题
     virtual void parse(const
-                       std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel> model)>& callback)
+                       std::function<void(ParserState state, std::shared_ptr<bcf::AbstractProtocolModel> model)>& callback)
     override
     {
         int totalLength = m_buffer->size();

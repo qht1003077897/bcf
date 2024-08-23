@@ -27,8 +27,6 @@ public:
     * @param [IN]  maxRecvBufferSize  毫秒级的超时时间，默认值位于 globaldefine.h #define DEFAULT_RECV_BUFFER_SIZE 16*1024
     */
     RequestHandlerBuilder& withMaxRecvBufferSize(int maxRecvBufferSize);
-
-    RequestHandlerBuilder& withAbandonCallback(bcf::AbandonCallback&& callback);
     /**
     * @brief 注册当前 RequestHandler 所支持的协议构造器,只有被注册的协议构建器，才支持被 request 函数接收和识别，否则request函数将立即回调 PROTOCOL_NOT_EXIST 错误码
     * 支持注册多个协议构造器，意味着用户在调用request时可以选择多个协议模型进行通信
@@ -81,7 +79,6 @@ private:
     std::vector<std::shared_ptr<IProtocolBuilder>> m_protocolBuilders;
     std::vector<std::shared_ptr<IProtocolParser>>  m_protocolParsers;
     CreateChannelFunc m_ccfunc;
-    bcf::AbandonCallback m_abcallback;
 };
 
 class BCF_EXPORT RequestHandler: public bcf::NonCopyable,
