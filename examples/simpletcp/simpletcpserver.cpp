@@ -1,17 +1,15 @@
 ﻿/**
-*  @FileName    : simpletcpclient.cpp
-*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp客户端使用方法
+*  @FileName    : simpletcpserver.cpp
+*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp服务端使用方法
 */
 
 #include <QCoreApplication>
 #include <QDebug>
-#include <QTimer>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include "bcf.h"
 using namespace std;
 
-#define CMD_REQ_NAME 0x01         //作为服务端,使用和客户端一样的cmd进行回应
 
 class MyTcpServer : public QTcpServer
 {
@@ -48,8 +46,8 @@ private slots:
                         qDebug() << "recv:" << QString::fromStdString(bmodel->body());
                         bcf::ByHeadProtocolBuilder builder;
                         auto amodel = std::make_shared<bcf::ByHeadProtocolModel>();
-                        amodel->seq = bcf::util::getNextSeq();
-                        amodel->cmd = CMD_REQ_NAME;
+                        amodel->seq = bmodel->seq;
+                        amodel->cmd = bmodel->cmd;//作为服务端,使用和客户端一样的cmd进行回应
                         amodel->setBody("my name is bcf!");
                         qDebug() << "reply:" << QString::fromStdString(amodel->body());
                         auto ptr = builder.build(amodel);
