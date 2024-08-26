@@ -48,4 +48,4 @@ cleanUp:StatusFinish
 
 然后运行 ymodel_recv 可执行程序（将ymodel_recv.cpp中要打开的串口改为COM3），再运行ymodel_send 可执行程序，将ymodel_send.cpp中要打开的串口改为COM2，将ymodel_send.cpp中默认发送的filename修改为你自己的文件路径，运行两个程序，截图如下：
 
-![ymodel_send_send](.ymodel_send_send.png) ![ymodel_send_recv](.ymodel_send_recv.png)
+![ymodel_send_send](./ymodel_send_send.png) ![ymodel_send_recv](./ymodel_send_recv.png)
