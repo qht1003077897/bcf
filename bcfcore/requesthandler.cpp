@@ -37,7 +37,9 @@ public:
     void sendFile(const std::string& fileName, const ProgressCallback& pcallback,
                   const TransmitStatusCallback& tcallback);
     void sendFileWithYModel(const std::string& fileName, const ProgressCallback& pcallback,
-                            const TransmitStatusCallback& tcallback);
+                            const TransmitStatusCallback& tcallback, int timeoutMillS);
+    void recvFileWithYModel(const std::string& savePath, const ProgressCallback& pcallback,
+                            const TransmitStatusCallback& tcallback, int timeoutMillS);
     void connect();
 
 signals:
@@ -154,9 +156,16 @@ void RequestHandler::sendFile(const std::string& fileName, const ProgressCallbac
 
 void RequestHandler::sendFileWithYModel(const std::string& fileName,
                                         const ProgressCallback& pcallback,
-                                        const TransmitStatusCallback& tcallback)
+                                        const TransmitStatusCallback& tcallback, int timeoutMillS)
 {
-    d_ptr->sendFileWithYModel(fileName, pcallback, tcallback);
+    d_ptr->sendFileWithYModel(fileName, pcallback, tcallback, timeoutMillS);
+}
+
+void RequestHandler::recvFileWithYModel(const std::string& savePath,
+                                        const ProgressCallback& pcallback,
+                                        const TransmitStatusCallback& tcallback, int timeoutMillS)
+{
+    d_ptr->recvFileWithYModel(savePath, pcallback, tcallback, timeoutMillS);
 }
 
 void RequestHandler::connect()
@@ -182,7 +191,7 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
         return;
     }
 
-    if (-2 == channel->send((const char * )buffer->data(), buffer->size())) {
+    if (-2 == channel->send((const char* )buffer->data(), buffer->size())) {
         (callback)(bcf::ErrorCode::ERROR_THREAD_AFFINITY, nullptr);
         return;
     }
@@ -200,11 +209,21 @@ void RequestHandler::RequestHandlerPrivate::sendFile(const std::string& fileName
 }
 
 void RequestHandler::RequestHandlerPrivate::sendFileWithYModel(const std::string& fileName,
-                                                               const ProgressCallback& pcallback, const TransmitStatusCallback& tcallback)
+                                                               const ProgressCallback& pcallback, const TransmitStatusCallback& tcallback, int timeoutMillS)
 {
     const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
+    m_fileTransmitHelper->setTimeOut(timeoutMillS);
     m_fileTransmitHelper->startTransmitWithYModel(channel, fileName, std::move(pcallback),
                                                   std::move(tcallback));
+}
+
+void RequestHandler::RequestHandlerPrivate::recvFileWithYModel(const std::string& savePath,
+                                                               const ProgressCallback& pcallback, const TransmitStatusCallback& tcallback, int timeoutMillS)
+{
+    const auto channel = m_channelManager->getChannel(m_ConnectOption.m_channelid);
+    m_fileTransmitHelper->setTimeOut(timeoutMillS);
+    m_fileTransmitHelper->startRecvWithYModel(channel, savePath, std::move(pcallback),
+                                              std::move(tcallback));
 };
 
 ////如何区分是发送回复的还是主动上报的？因此全部都是走receive，receive里面根据业务ID判断转给哪个callback

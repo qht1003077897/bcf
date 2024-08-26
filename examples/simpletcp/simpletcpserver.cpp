@@ -34,8 +34,7 @@ private slots:
         QTcpSocket* clientSocket = qobject_cast<QTcpSocket*>(sender());
         if (clientSocket) {
             QByteArray res = clientSocket->readAll();
-            bcf::ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
-            ptr->putBytes((uint8_t*)res.data(), res.length());
+            bcf::ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>((uint8_t*)res.data(), res.length());
 
             bcf::ByHeadProtocolParser parser;
             if (parser.sniff(ptr)) {

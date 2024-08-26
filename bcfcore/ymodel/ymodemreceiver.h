@@ -4,51 +4,44 @@
 #include "bcfexport.h"
 #include "ichannel.h"
 #include "ymodem.h"
-#ifdef BCF_USE_QT_SERIALPORT
-    #include <QTimer>
-#else
-    #include "base/timer.h"
-#endif
+#include <QTimer>
+#include <QFile>
 
 namespace bcf
 {
-class BCF_EXPORT YmodemTransmit  :
-#ifdef BCF_USE_QT_SERIALPORT
+class QSerialPort;
+class BCF_EXPORT YmodemFileReceive  :
     public QObject,
     public YModem
 {
     Q_OBJECT
-#else
-    public YModem {
-#endif
 public:
-    explicit YmodemTransmit();
-    ~YmodemTransmit();
+    explicit YmodemFileReceive();
+    ~YmodemFileReceive();
 
 public:
-    void setFileName(const std::string & name);
+    void setSaveFilePath(const std::string& filePath);
 
     void setTimeOut(int timeMillS);
 
     void setChannel(std::shared_ptr<IChannel> channel);
     std::shared_ptr<IChannel> getChannel();
 
-    bool startTransmit();
-    void stopTransmit();
+    bool startReceive();
+    void stopReceive();
 
-    int getTransmitProgress();
-    YModem::Status getTransmitStatus();
+    int getReceiveProgress();
+    YModem::Status getReceiveStatus();
 
     void setProgressCallback(const ProgressCallback&);
     void setTransmitStatusCallback(const TransmitStatusCallback&);
 
-private:
+private slots:
     /**
     * @brief 给send和receive的延迟缓冲时间，避免立即调用引起的未知异常
     */
     void slotReadTimeOut();
     void callTransmitStatus(Status);
-    void startWithTimeOut(int);
 
 protected:
     uint32_t callback(YModem::Status status, uint8_t* buff,
@@ -62,18 +55,12 @@ private:
     uint64_t                     fileSize;
     uint64_t                     fileCount;
     YModem::Status               status;
-
-    FILE*                        pfile;
-
-#ifdef BCF_USE_QT_SERIALPORT
-    std::shared_ptr<QTimer>      readTimer;
-#else
-    std::shared_ptr<bcf::Timer>  readTimer;
-#endif
+    QFile                        file;
+    QTimer                       readTimer;
     std::shared_ptr<IChannel>    channel;
-    std::string                  fileName;
+    QString                      filePath;
+    QString                      fileName;
     ProgressCallback             progressCallback;
     TransmitStatusCallback       transmitStatusCallback;
-    std::function<void()>        timeOutFunc;
 };
 }

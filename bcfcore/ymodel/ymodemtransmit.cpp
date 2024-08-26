@@ -4,7 +4,9 @@
 namespace fs = std::filesystem;
 using namespace bcf;
 
-#define READ_TIME_OUT   (50)
+
+#define READ_TIME_MAX   (4)
+#define READ_TIME_OUT   (10)
 #define WRITE_TIME_OUT  (100)
 
 YmodemTransmit::YmodemTransmit()
@@ -14,6 +16,10 @@ YmodemTransmit::YmodemTransmit()
     : readTimer(std::make_shared<bcf::Timer>())
 #endif
 {
+    setTimeDivide(499);
+    setTimeMax(READ_TIME_MAX);
+    setErrorMax(999);
+
 #ifdef BCF_USE_QT_SERIALPORT
     QObject::connect(readTimer.get(), &QTimer::timeout, this, &YmodemTransmit::slotReadTimeOut);
 #else
@@ -30,6 +36,17 @@ YmodemTransmit::~YmodemTransmit()
 void YmodemTransmit::setFileName(const std::string& name)
 {
     fileName = name;
+}
+
+void YmodemTransmit::setTimeOut(int timeMillS)
+{
+    if (timeMillS < 2000) {
+        timeMillS = 2000;//最少2S超时
+    }
+
+    //timeMillS = READ_TIME_OUT * (TimeDivide+1) * (READ_TIME_MAX+1);
+    int devideMixMax = timeMillS / READ_TIME_OUT / (READ_TIME_MAX + 1);
+    setTimeDivide(devideMixMax);
 }
 
 void YmodemTransmit::setChannel(std::shared_ptr<IChannel> _channel)
@@ -66,7 +83,7 @@ bool YmodemTransmit::startTransmit()
     //MCU底层代码写的有问题，MCU作为接收端没有主动轮询发送C，需要上位机发送端发送一个任意内容（不要超过1个字节）触发C回复
     char data[1] = {'C'};
     channel->send(data, 1);
-    setTimeOut(READ_TIME_OUT);
+    startWithTimeOut(READ_TIME_OUT);
     return true;
 }
 
@@ -108,7 +125,7 @@ void YmodemTransmit::slotReadTimeOut()
     transmit();
 
     if ((status == StatusEstablish) || (status == StatusTransmit)) {
-        setTimeOut(READ_TIME_OUT);
+        startWithTimeOut(READ_TIME_OUT);
     }
 }
 
@@ -119,12 +136,12 @@ void YmodemTransmit::callTransmitStatus(Status state)
     }
 }
 
-void YmodemTransmit::setTimeOut(int timeout)
+void YmodemTransmit::startWithTimeOut(int timeout)
 {
 #ifdef BCF_USE_QT_SERIALPORT
     readTimer->start(timeout);
 #else
-    readTimer->setTimeout(timeOutFunc, timeout);
+    readTimer->startWithTimeOut(timeOutFunc, timeout);
 #endif
 }
 
@@ -135,7 +152,7 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
                 pfile = fopen(fileName.data(), "rb");
                 if (pfile == nullptr) {
                     status = StatusError;
-                    setTimeOut(WRITE_TIME_OUT);
+                    startWithTimeOut(WRITE_TIME_OUT);
                     return CodeCan;
                 }
                 fs::path file_path = fileName;
@@ -183,7 +200,7 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
         case StatusFinish: {
                 fclose(pfile);
                 status = StatusFinish;
-                setTimeOut(WRITE_TIME_OUT);
+                startWithTimeOut(WRITE_TIME_OUT);
                 callTransmitStatus(StatusFinish);
                 return CodeAck;
             }
@@ -191,14 +208,14 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
         case StatusAbort: {
                 fclose(pfile);
                 status = StatusAbort;
-                setTimeOut(WRITE_TIME_OUT);
+                startWithTimeOut(WRITE_TIME_OUT);
                 callTransmitStatus(StatusAbort);
                 return CodeCan;
             }
 
         case StatusTimeout: {
                 status = StatusTimeout;
-                setTimeOut(WRITE_TIME_OUT);
+                startWithTimeOut(WRITE_TIME_OUT);
                 callTransmitStatus(StatusTimeout);
                 return CodeCan;
             }
@@ -209,7 +226,7 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
         default: {
                 fclose(pfile);
                 status = StatusError;
-                setTimeOut(WRITE_TIME_OUT);
+                startWithTimeOut(WRITE_TIME_OUT);
                 return CodeCan;
             }
     }

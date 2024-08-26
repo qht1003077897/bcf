@@ -96,10 +96,16 @@ public:
     void sendFile(const std::string& fileName, const ProgressCallback&, const TransmitStatusCallback&);
     /**
     * @brief 特定于串口的基于YModel协议的文件发送，支持发送文件给xshell进行验证.
-    * @example examples/ymodel.cpp
+    * @example examples/ymodel_send.cpp
     */
     void sendFileWithYModel(const std::string& fileName, const ProgressCallback&,
-                            const TransmitStatusCallback&);
+                            const TransmitStatusCallback&, int timeoutMillS = DEFAULT_YMODEL_TIME_OUT_MILLSCENDS);
+    /**
+    * @brief 特定于串口的基于YModel协议的文件接收，支持接收来自xshell的文件/和支持接收来自 sendFileWithYModel 函数的文件.
+    * @example examples/ymodel_recv.cpp
+    */
+    void recvFileWithYModel(const std::string& savePath, const ProgressCallback&,
+                            const TransmitStatusCallback&, int timeoutMillS = DEFAULT_YMODEL_TIME_OUT_MILLSCENDS);
     /**
     * @brief 建立IO连接
     */
