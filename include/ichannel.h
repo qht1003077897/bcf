@@ -18,7 +18,7 @@ using ErrorCallback = std::function<void(const std::string&)>;
 using GenChannelIDFunc = std::function<int()>;
 using CreateChannelFunc = std::function<std::shared_ptr<bcf::IChannel>()>;
 using ConnectionCompletedCallback = std::function<void(std::shared_ptr<bcf::IChannel>)>;
-using ConnectionFailCallback = std::function<void(int)>;
+using ConnectionFailCallback = std::function<void()>;
 using ByteBufferPtr = std::shared_ptr<bb::ByteBuffer>;
 
 enum class ChannelState : uint16_t {

@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
             std::make_shared<bcf::TCPClientChannel_QT>("127.0.0.1", 1234); //使用bcf内部的串口通道类
         return channel;
     })
-    .withFailedCallback([](int errorCode) {
-        std::cerr <<  "withFailedCallback:" << errorCode << std::endl;
+    .withFailedCallback([]() {
+        std::cerr <<  "withFailedCallback" << std::endl;
     })
     .withConnectionCompletedCallback([&connect](std::shared_ptr<bcf::IChannel> channel) {
         qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID();

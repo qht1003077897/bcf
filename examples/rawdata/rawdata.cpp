@@ -27,8 +27,8 @@ int main(int argc, char* argv[])
         });
         return tmpChannel;
     })
-    .withFailedCallback([](int errorcode) {
-        std::cerr <<  "withFailedCallback:" << errorcode;
+    .withFailedCallback([]() {
+        std::cerr <<  "withFailedCallback" << std::endl;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
         qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID() ;

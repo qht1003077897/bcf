@@ -4,29 +4,23 @@
 #include "bcfexport.h"
 #include "ichannel.h"
 #include "ymodem.h"
-#ifdef BCF_USE_QT_SERIALPORT
-    #include <QTimer>
-#else
-    #include "base/timer.h"
-#endif
+#include <QTimer>
+#include <QFile>
 
 namespace bcf
 {
 class BCF_EXPORT YmodemTransmit  :
-#ifdef BCF_USE_QT_SERIALPORT
     public QObject,
     public YModem
 {
     Q_OBJECT
-#else
-    public YModem {
-#endif
+
 public:
     explicit YmodemTransmit();
     ~YmodemTransmit();
 
 public:
-    void setFileName(const std::string & name);
+    void setFileName(const std::string& name);
 
     void setTimeOut(int timeMillS);
 
@@ -63,15 +57,9 @@ private:
     uint64_t                     fileCount;
     YModem::Status               status;
 
-    FILE*                        pfile;
-
-#ifdef BCF_USE_QT_SERIALPORT
+    QFile                        file;
     std::shared_ptr<QTimer>      readTimer;
-#else
-    std::shared_ptr<bcf::Timer>  readTimer;
-#endif
     std::shared_ptr<IChannel>    channel;
-    std::string                  fileName;
     ProgressCallback             progressCallback;
     TransmitStatusCallback       transmitStatusCallback;
     std::function<void()>        timeOutFunc;

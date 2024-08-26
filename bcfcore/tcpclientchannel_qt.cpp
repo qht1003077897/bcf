@@ -122,7 +122,7 @@ void TCPClientChannel_QT::onErrorOccurred(int error)
     auto err = (QTcpSocket::QAbstractSocket::SocketError)error;
     qCritical() << "onErrorOccurred:" << err;
     if (m_FailCallback) {
-        m_FailCallback(error);
+        m_FailCallback();
     }
 
     if (m_errorCallback) {

@@ -42,9 +42,9 @@ void IChannel::setErrorCallback(ErrorCallback&& errorCallback)
 
 void IChannel::setFailedCallback(ConnectionFailCallback &&callback)
 {
-    m_FailCallback = [call = std::move(callback)](int errorcode) {
+    m_FailCallback = [call = std::move(callback)]() {
         std::cout << "Opened fail" << std::endl;
-        call(errorcode);
+        call();
     };
 }
 

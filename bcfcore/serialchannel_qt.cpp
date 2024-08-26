@@ -64,7 +64,7 @@ void SerialChannel_QT::openInternal()
     qDebug() << "Open:" << m_pSerialPort->portName() << ":" << res;
     if (!res) {
         if (m_FailCallback) {
-            m_FailCallback(m_pSerialPort->error());
+            m_FailCallback();
         }
     } else {
         if (m_CompleteCallback) {

@@ -1,7 +1,6 @@
-﻿#include <filesystem>
+﻿#include <QFileInfo>
 #include "ymodemtransmit.h"
 
-namespace fs = std::filesystem;
 using namespace bcf;
 
 
@@ -10,32 +9,24 @@ using namespace bcf;
 #define WRITE_TIME_OUT  (100)
 
 YmodemTransmit::YmodemTransmit()
-#ifdef BCF_USE_QT_SERIALPORT
     : readTimer(std::make_shared<QTimer>())
-#else
-    : readTimer(std::make_shared<bcf::Timer>())
-#endif
 {
     setTimeDivide(499);
     setTimeMax(READ_TIME_MAX);
     setErrorMax(999);
 
-#ifdef BCF_USE_QT_SERIALPORT
     QObject::connect(readTimer.get(), &QTimer::timeout, this, &YmodemTransmit::slotReadTimeOut);
-#else
-    timeOutFunc = std::bind(&YmodemTransmit::slotReadTimeOut, this);
-#endif
 }
 
 YmodemTransmit::~YmodemTransmit()
 {
-    delete pfile;
+    file.close();
     readTimer->stop();
 }
 
 void YmodemTransmit::setFileName(const std::string& name)
 {
-    fileName = name;
+    file.setFileName(QString::fromStdString(name));
 }
 
 void YmodemTransmit::setTimeOut(int timeMillS)
@@ -69,13 +60,11 @@ bool YmodemTransmit::startTransmit()
         return false;
     }
 
-    fs::path file_path = fileName;
-    // 获取文件名
-    fs::path filename = file_path.filename();
-    auto fileSize = fs::file_size(file_path);
+    QFileInfo fileInfo(file);
+    QByteArray baFileName = fileInfo.fileName().toLocal8Bit();
+    QByteArray baFileSize = QByteArray::number(fileInfo.size());
     //SOH 00 FF NUL[128] CRCH CRCL
-    auto fileSizeStr = std::to_string(fileSize);
-    if (filename.string().length() + fileSizeStr.length() > (YMODEM_PACKET_SIZE - 2)) {
+    if (baFileName.length() + baFileSize.length() > (YMODEM_PACKET_SIZE - 2)) {
         std::cerr << "file' length exceed 128" << std::endl;
         return false;
     }
@@ -89,9 +78,7 @@ bool YmodemTransmit::startTransmit()
 
 void YmodemTransmit::stopTransmit()
 {
-    if (nullptr != pfile) {
-        fclose(pfile);
-    }
+    file.close();
     abort();
     status = StatusAbort;
     readTimer->stop();
@@ -138,49 +125,45 @@ void YmodemTransmit::callTransmitStatus(Status state)
 
 void YmodemTransmit::startWithTimeOut(int timeout)
 {
-#ifdef BCF_USE_QT_SERIALPORT
     readTimer->start(timeout);
-#else
-    readTimer->startWithTimeOut(timeOutFunc, timeout);
-#endif
 }
 
 uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
 {
     switch (_status) {
         case StatusEstablish: {
-                pfile = fopen(fileName.data(), "rb");
-                if (pfile == nullptr) {
+                if (file.open(QFile::ReadOnly)) {
+                    QFileInfo fileInfo(file);
+
+                    fileSize  = fileInfo.size();
+                    std::cout << "fileSize: " << fileSize << std::endl;
+                    fileCount = 0;
+
+                    QByteArray baFileName = fileInfo.fileName().toLocal8Bit();
+                    QByteArray baFileSize = QByteArray::number(fileInfo.size());
+                    strncpy((char*)buff, baFileName.data(), baFileName.size());
+                    strncpy((char*)buff + baFileName.size() + 1, baFileSize.data(), baFileSize.size());
+
+                    *len = YMODEM_PACKET_SIZE;
+
+                    status = StatusEstablish;
+                    callTransmitStatus(StatusEstablish);
+                    return CodeAck;
+                } else {
                     status = StatusError;
-                    startWithTimeOut(WRITE_TIME_OUT);
+                    readTimer->start(WRITE_TIME_OUT);
                     return CodeCan;
                 }
-                fs::path file_path = fileName;
-                fs::path fsfilename = file_path.filename();
-                std::string filename = fsfilename.string();
-                std::cout << "filename: " << filename << std::endl;
-                fileSize = fs::file_size(file_path);
-
-                fileCount = 0;
-                strncpy((char*)buff, filename.data(), filename.size());
-                std::string fileSizeStr = std::to_string(fileSize);
-                std::cout << "fileSize: " << fileSizeStr << std::endl;
-                strncpy((char*)buff + filename.size() + 1, fileSizeStr.data(), fileSizeStr.length());
-
-                *len = YMODEM_PACKET_SIZE;
-                status = StatusEstablish;
-                callTransmitStatus(StatusEstablish);
-                return CodeAck;
             }
 
         case StatusTransmit: {
                 if (fileSize != fileCount) {
                     //*** 此处勿动，最后一个包不足128 一律按照1024处理，否则MCU校验不通过
                     if ((fileSize - fileCount) > YMODEM_PACKET_SIZE) {
-                        fileCount += fread(buff, sizeof(char), YMODEM_PACKET_1K_SIZE, pfile);
+                        fileCount += file.read((char*)buff, YMODEM_PACKET_1K_SIZE);
                         *len = YMODEM_PACKET_1K_SIZE;
                     } else {
-                        fileCount += fread(buff, sizeof(char), YMODEM_PACKET_SIZE, pfile);
+                        fileCount += file.read((char*)buff, YMODEM_PACKET_SIZE);
                         * len = YMODEM_PACKET_SIZE;
                     }
                     progress = (int)(fileCount * 100 / fileSize);
@@ -198,7 +181,7 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
             }
 
         case StatusFinish: {
-                fclose(pfile);
+                file.close();
                 status = StatusFinish;
                 startWithTimeOut(WRITE_TIME_OUT);
                 callTransmitStatus(StatusFinish);
@@ -206,7 +189,7 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
             }
 
         case StatusAbort: {
-                fclose(pfile);
+                file.close();
                 status = StatusAbort;
                 startWithTimeOut(WRITE_TIME_OUT);
                 callTransmitStatus(StatusAbort);
@@ -224,7 +207,7 @@ uint32_t YmodemTransmit::callback(Status _status, uint8_t* buff, uint32_t* len)
                 return CodeAck;
             }
         default: {
-                fclose(pfile);
+                file.close();
                 status = StatusError;
                 startWithTimeOut(WRITE_TIME_OUT);
                 return CodeCan;
