@@ -182,9 +182,7 @@ void RequestHandler::RequestHandlerPrivate::request(std::shared_ptr<bcf::Abstrac
         return;
     }
 
-    auto buf = std::make_unique<uint8_t[]>(buffer->size());
-    buffer->getBytes(buf.get(), buffer->size());
-    if (-2 == channel->send((const char* )buf.get(), buffer->size())) {
+    if (-2 == channel->send((const char * )buffer->data(), buffer->size())) {
         (callback)(bcf::ErrorCode::ERROR_THREAD_AFFINITY, nullptr);
         return;
     }

@@ -51,10 +51,7 @@ private slots:
                         amodel->setBody("my name is bcf!");
                         qDebug() << "reply:" << QString::fromStdString(amodel->body());
                         auto ptr = builder.build(amodel);
-                        auto buf = std::make_unique<uint8_t[]>(ptr->size());
-                        ptr->getBytes(buf.get(), ptr->size());
-
-                        clientSocket->write((const char* )buf.get(), ptr->size());
+                        clientSocket->write((const char* )ptr->data(), ptr->size());
                     }
                 });
             }

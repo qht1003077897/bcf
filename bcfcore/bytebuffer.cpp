@@ -155,6 +155,11 @@ uint32_t ByteBuffer::size()
     return buf.size();
 }
 
+uint8_t* bb::ByteBuffer::data()
+{
+    return buf.data();
+}
+
 // Replacement
 
 /**

@@ -65,6 +65,7 @@ public:
     bool equals(ByteBuffer* other); // Compare if the contents are equivalent
     void resize(uint32_t newSize);
     uint32_t size(); // Size of internal vector
+    uint8_t* data(); // pointer of internal vector
 
     // Basic Searching (Linear)
     template<typename T> int32_t find(T key, uint32_t start = 0)
@@ -200,7 +201,7 @@ private:
     template<typename T> T read(uint32_t index) const
     {
         if (index + sizeof(T) <= buf.size())
-            return *((T* ) &buf[index]);
+            return *((T * ) &buf[index]);
         return 0;
     }
 
