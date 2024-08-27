@@ -1,13 +1,11 @@
-﻿#include "SerialChannel_qt.h"
-#include "base/exception.hpp"
-#ifdef BCF_USE_QT_SERIALPORT
+﻿#include <QThread>
 #include <QSerialPort>
-#include <QDebug>
-#include <QTimer>
-#include <QThread>
+#include "serialchannel_qt.h"
+#include "base/exception.hpp"
+
 using namespace bcf;
 
-SerialChannel_QT::SerialChannel_QT(const std::string& name, QObject* parent):
+SerialChannel_QT::SerialChannel_QT(const QString& name, QObject* parent):
     QObject(parent)
 {
     m_pSerialPort = new QSerialPort(this);
@@ -28,9 +26,9 @@ SerialChannel_QT::~SerialChannel_QT()
     }
 }
 
-void SerialChannel_QT::setPortName(const std::string& name)
+void SerialChannel_QT::setPortName(const QString& name)
 {
-    m_pSerialPort->setPortName(QString::fromStdString(name));
+    m_pSerialPort->setPortName(name);
 }
 
 void SerialChannel_QT::setBaudRate(int baudRate)
@@ -61,7 +59,7 @@ void SerialChannel_QT::setFlowControl(int flowControl)
 void SerialChannel_QT::openInternal()
 {
     bool res =  m_pSerialPort->open(QSerialPort::ReadWrite);
-    qDebug() << "Open:" << m_pSerialPort->portName() << ":" << res;
+    std::cout << "open:" << m_pSerialPort->portName().toStdString() << ":" << res << std::endl;
     if (!res) {
         if (m_FailCallback) {
             m_FailCallback();
@@ -75,7 +73,7 @@ void SerialChannel_QT::openInternal()
 
 bool SerialChannel_QT::closeInternal()
 {
-    qDebug() << "Close:" << m_pSerialPort->portName();
+    std::cout << "close:" << m_pSerialPort->portName().toStdString() << std::endl;
     if (m_pSerialPort->isOpen()) {
         m_pSerialPort->close();
     }
@@ -144,7 +142,6 @@ void bcf::SerialChannel_QT::setMaxRecvBufferSize(int maxRecvBufferSize)
 void SerialChannel_QT::onReceivedData()
 {
     auto res = m_pSerialPort->readAll();
-    qDebug() << "Received data:" << res;
     ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
     ptr->putBytes((uint8_t*)res.data(), res.length());
     if (m_rawdataCallback) {
@@ -165,4 +162,3 @@ void SerialChannel_QT::onErrorOccurred(int error)
         m_errorCallback(m_pSerialPort->errorString().toStdString());
     }
 }
-#endif

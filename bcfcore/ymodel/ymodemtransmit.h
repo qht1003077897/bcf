@@ -1,17 +1,13 @@
 ﻿#pragma once
-#include <config.h>
 #include <memory>
-#include "bcfexport.h"
-#include "ichannel.h"
-#include "ymodem.h"
 #include <QTimer>
 #include <QFile>
+#include "ichannel.h"
+#include "ymodem.h"
 
 namespace bcf
 {
-class BCF_EXPORT YmodemTransmit  :
-    public QObject,
-    public YModem
+class YmodemTransmit : public QObject, public YModem
 {
     Q_OBJECT
 
@@ -22,9 +18,9 @@ public:
 public:
     void setFileName(const std::string& name);
 
-    void setTimeOut(int timeMillS);
+    void setTimeOut(int timeMills);
 
-    void setChannel(std::shared_ptr<IChannel> channel);
+    void setChannel(const std::shared_ptr<IChannel>& channel);
     std::shared_ptr<IChannel> getChannel();
 
     bool startTransmit();
@@ -56,12 +52,10 @@ private:
     uint64_t                     fileSize;
     uint64_t                     fileCount;
     YModem::Status               status;
-
     QFile                        file;
     std::shared_ptr<QTimer>      readTimer;
     std::shared_ptr<IChannel>    channel;
     ProgressCallback             progressCallback;
     TransmitStatusCallback       transmitStatusCallback;
-    std::function<void()>        timeOutFunc;
 };
 }

@@ -2,34 +2,35 @@
 using namespace std;
 using namespace bcf;
 
-/**
- *
- *  下面的例子中演示了如何自定义自己的协议，如果你不想使用bcf内置的支持的协议，你可以参考 customprotocol.h 定义自己的通信协议。
- *  在下面的例子中，我们参考 ByHeadProtocolModel，只是将cmd拆分为2个2byte的字段，将body的内容用json格式代替。
- *  其实大多数用户层协议都是这个格式，例子的目的只是告诉使用者如何自定义和自定义的要求。
- *  >NOTE: bcf要求报文中【协议类型】和【会话唯一序列号】必须存在,且位于开头,seq后面的内容可以自定义
-*/
-
 #define WHAT_NAME          0x0001
 #define ACTION_GET_NAME    0x0010
 #define ACTION_SET_NAME    0x0020
 
-bcf::PackMode customPackMode = static_cast<bcf::PackMode>(bcf::PackMode::UNPACK_BY_USER + 1);
+static bcf::PackMode customPackMode = static_cast<bcf::PackMode>(bcf::PackMode::UNPACK_BY_USER + 1);
+
+/**
+ *  @brief
+ *  下面的例子中演示了如何自定义自己的协议,如果你不想使用bcf内置的支持的协议,你可以参考@ref examples/customprotocol/customprotocol.h 定义自己的通信协议。
+ *  在下面的例子中,我们参考@class ByHeadProtocolModel,只是将cmd拆分为2个2byte的字段,将body的内容用json格式代替。
+ *  其实大多数用户层协议都是这个格式,例子的目的只是告诉使用者如何自定义和自定义的要求。
+ *  @note bcf要求报文中【协议类型】和【会话唯一序列号】必须存在,且位于开头,seq后面的内容可以自定义 @see bcf::ByHeadProtocolModel
+*/
 class CustomProtocolModel : public bcf::AbstractProtocolModel
 {
 public:
+
     bcf::PackMode protocolType() override
     {
         return customPackMode;
     };
 
     /**
-    bcf要求【协议类型】和【会话唯一序列号】必须存在,seq后面的内容可以自定义
-    协议类型\会话唯一序列号\业务类型\当前业务类型下的对应的具体操作\body长度
-    |*****************head****************************|*****body*****|
-    |    type  |   seq   | what  | action   | length  |     XXX      |
-    |    1byte |  4byte  | 2byte |  2byte   | 4bytes  | length bytes |
-    |*************************************************|**************|
+    * bcf要求【协议类型】和【会话唯一序列号】必须存在,seq后面的内容可以自定义 @see bcf::ByHeadProtocolModel
+    * 协议类型\会话唯一序列号\业务类型\当前业务类型下的对应的具体操作\body长度
+    * |*****************head****************************|*****body*****|
+    * |    type  |   seq   | what  | action   | length  |     XXX      |
+    * |    1byte |  4byte  | 2byte |  2byte   | 4bytes  | length bytes |
+    * |*************************************************|**************|
     **/
     uint16_t what = 0;
     uint16_t action = 0;
@@ -60,7 +61,7 @@ public:
     {
         return customPackMode;
     };
-    std::shared_ptr<bb::ByteBuffer> build(std::shared_ptr<bcf::AbstractProtocolModel> _model)
+    std::shared_ptr<bb::ByteBuffer> build(const std::shared_ptr<bcf::AbstractProtocolModel>& _model)
     override
     {
         //your build...  e.g. ByHeadProtocolBuilder

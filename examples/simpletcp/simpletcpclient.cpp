@@ -1,14 +1,12 @@
-﻿/**
-*  @FileName    : simpletcpclient.cpp
-*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp客户端使用方法
-*/
-
-#include <QCoreApplication>
-#include <QDebug>
+﻿#include <QCoreApplication>
 #include <QTimer>
 #include "bcf.h"
 using namespace std;
 
+/**
+*  @file    : simpletcpclient.cpp
+*  @brief   : 使用 @class ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp客户端使用方法
+*/
 #define CHANNEL_ID_TCP 0   //作为通道的唯一id，在真实的业务环境中随意定义为任意int即可
 
 #define CMD_REQ_NAME 0x01         //模拟一个请求对方名字的cmd，在真实的业务环境中请和对端协商定义唯一的int值即可
@@ -31,7 +29,7 @@ int main(int argc, char* argv[])
         std::cerr <<  "withFailedCallback" << std::endl;
     })
     .withConnectionCompletedCallback([&connect](std::shared_ptr<bcf::IChannel> channel) {
-        qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID();
+        std::cout <<  "withConnectionCompletedCallback channelID:" << channel->channelID() << std::endl;
         connect = true;
     })
     .build();
@@ -49,8 +47,8 @@ int main(int argc, char* argv[])
             std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
                 auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(retmodel);
                 if (bmodel) {
-                    qDebug() << "retmodel seq:" << bmodel->seq;
-                    qDebug() << "retmodel body:" <<  QString::fromStdString(bmodel->body());
+                    std::cout << "retmodel seq:" << bmodel->seq << std::endl;
+                    std::cout << "retmodel body:" <<  bmodel->body() << std::endl;
                 }
             });
         }

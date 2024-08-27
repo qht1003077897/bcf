@@ -1,44 +1,46 @@
-﻿#include "ymodemreceiver.h"
-#include <QDebug>
-#include <QByteArray>
+﻿#include <QByteArray>
+#include "ymodemreceiver.h"
+
+using namespace  bcf;
 
 #define READ_TIME_MAX   (4)
 #define READ_TIME_OUT   (10)
 #define WRITE_TIME_OUT  (100)
 
-using namespace  bcf;
-
 YmodemFileReceive::YmodemFileReceive()
 {
-    setTimeDivide(499);
-    setTimeMax(READ_TIME_MAX);
-    setErrorMax(999);
+    YModem::setTimeDivide(499);
+    YModem::setTimeMax(READ_TIME_MAX);
+    YModem::setErrorMax(999);
 
     QObject::connect(&readTimer, SIGNAL(timeout()), this, SLOT(slotReadTimeOut()));
 }
 
 YmodemFileReceive::~YmodemFileReceive()
 {
+    file.close();
+    readTimer.stop();
 }
 
 void YmodemFileReceive::setSaveFilePath(const std::string& path)
 {
-    filePath = QString::fromStdString(path).append("/");
+    QString qpath = QString::fromStdString(path);
+    filePath = qpath.append("/");
 }
 
-void YmodemFileReceive::setTimeOut(int timeMillS)
+void YmodemFileReceive::setTimeOut(int timeMills)
 {
-    if (timeMillS < 2000) {
-        timeMillS = 2000;//最少2S超时
+    if (timeMills < 2000) {
+        timeMills = 2000;//最少2S超时
     }
 
     //timeMillS = READ_TIME_OUT * (TimeDivide+1) * (READ_TIME_MAX+1);
-    int devideMixMax = timeMillS / READ_TIME_OUT / (READ_TIME_MAX + 1);
-    setTimeDivide(devideMixMax);
+    int devideMixMax = timeMills / READ_TIME_OUT / (READ_TIME_MAX + 1);
+    YModem::setTimeDivide(devideMixMax);
 }
 
 
-void YmodemFileReceive::setChannel(std::shared_ptr<IChannel> _channel)
+void YmodemFileReceive::setChannel(const std::shared_ptr<IChannel>& _channel)
 {
     channel = _channel;
 }
@@ -47,8 +49,6 @@ std::shared_ptr<IChannel> YmodemFileReceive::getChannel()
 {
     return channel;
 }
-
-
 
 bool YmodemFileReceive::startReceive()
 {
@@ -67,7 +67,7 @@ bool YmodemFileReceive::startReceive()
 void YmodemFileReceive::stopReceive()
 {
     file.close();
-    abort();
+    YModem::abort();
     status = StatusAbort;
 
     callTransmitStatus(StatusAbort);
@@ -97,7 +97,7 @@ void YmodemFileReceive::slotReadTimeOut()
 {
     readTimer.stop();
 
-    receive();
+    YModem::receive();
 
     if ((status == StatusEstablish) || (status == StatusTransmit)) {
         readTimer.start(READ_TIME_OUT);
@@ -115,15 +115,12 @@ uint32_t YmodemFileReceive::callback(Status status, uint8_t* buff, uint32_t* len
 {
     switch (status) {
         case StatusEstablish: {
-                QByteArray b = QByteArray((char*)buff, 133).toHex();
-                qDebug() << "recvbuff:" <<  b;
                 if (buff[0] != 0) {
                     int  i         =  0;
                     char name[128] = {0};
                     char size[128] = {0};
 
                     for (int j = 0; buff[i] != 0 && buff[i] != 0x20; i++, j++) {
-                        qDebug() << buff[i];
                         name[j] = buff[i];
                     }
 
@@ -131,15 +128,14 @@ uint32_t YmodemFileReceive::callback(Status status, uint8_t* buff, uint32_t* len
                     //SOH 00 FF foo.c 3232 NUL[118] CRCH CRCL
                     //0或者空格,xshell 在文件名称和文件大小中间发送的是空格，即0x20,标准YMODEM协议要求文件名称以'\0'(也就是0)结尾，所以如果要实现和xshell互通，此处要兼容
                     for (int j = 0; buff[i] != 0 && buff[i] != 0x20; i++, j++) {
-                        qDebug() << buff[i];
                         size[j] = buff[i];
                     }
 
                     fileName  = QString::fromLocal8Bit(name);
                     fileSize  = QString(size).toULongLong();
                     fileCount = 0;
-                    qDebug() << "StatusEstablish::fileName:" << fileName ;
-                    qDebug() << "StatusEstablish::fileSize:" << fileSize ;
+                    std::cout << "fileName:" << fileName.toStdString() << std::endl;
+                    std::cout << "fileSize:" << fileSize << std::endl;
                     file.setFileName(filePath + fileName);
 
                     if (file.open(QFile::WriteOnly) == true) {
@@ -184,9 +180,7 @@ uint32_t YmodemFileReceive::callback(Status status, uint8_t* buff, uint32_t* len
 
         case StatusFinish: {
                 file.close();
-
                 YmodemFileReceive::status = StatusFinish;
-
                 callTransmitStatus(StatusFinish);
 
                 //结束后，回复ack，以保证发送端正常结束状态
@@ -199,25 +193,20 @@ uint32_t YmodemFileReceive::callback(Status status, uint8_t* buff, uint32_t* len
 
         case StatusAbort: {
                 file.close();
-
                 YmodemFileReceive::status = StatusAbort;
-
                 callTransmitStatus(StatusAbort);
                 return CodeCan;
             }
 
         case StatusTimeout: {
                 YmodemFileReceive::status = StatusTimeout;
-
                 callTransmitStatus(StatusTimeout);
                 return CodeCan;
             }
 
         default: {
                 file.close();
-
                 YmodemFileReceive::status = StatusError;
-
                 callTransmitStatus(StatusError);
                 return CodeCan;
             }

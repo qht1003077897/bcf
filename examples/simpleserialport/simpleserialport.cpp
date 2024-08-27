@@ -1,12 +1,11 @@
-﻿/**
-*  @FileName    : simpleserialport.cpp
-*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf 串口使用方法
-*/
-
-#include <QCoreApplication>
-#include <QDebug>
+﻿#include <QCoreApplication>
 #include "bcf.h"
 using namespace std;
+
+/**
+*  @file      : simpleserialport.cpp
+*  @brief     : 使用 @class ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf 串口使用方法
+*/
 
 #define CHANNEL_ID_SERIALPORT 0   //作为通道的唯一id，在真实的业务环境中随意定义为任意int即可
 
@@ -29,8 +28,8 @@ int main(int argc, char* argv[])
         if (model->protocolType() == bcf::PackMode::UNPACK_BY_LENGTH_FIELD) {
             auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(model);
             if (bmodel) {
-                qDebug() <<  "withReceiveData retmodel seq: " << bmodel->seq;
-                qDebug() << "withReceiveData retmodel body:" << QString::fromStdString(bmodel->body());
+                std::cout <<  "withReceiveData retmodel seq: " << bmodel->seq << std::endl;
+                std::cout << "withReceiveData retmodel body:" << bmodel->body() << std::endl;
             }
         }
     })
@@ -38,7 +37,7 @@ int main(int argc, char* argv[])
         std::cerr <<  "withFailedCallback" << std::endl;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
-        qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID() ;
+        std::cout <<  "withConnectionCompletedCallback channelID:" << channel->channelID() << std::endl;
     })
     .build();
     requestPtr->connect();
@@ -53,8 +52,8 @@ int main(int argc, char* argv[])
     std::shared_ptr<bcf::AbstractProtocolModel> retmodel) {
         auto bmodel = std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(retmodel);
         if (bmodel) {
-            qDebug() << "retmodel seq:" << bmodel->seq;
-            qDebug() << "retmodel body:" <<  QString::fromStdString(bmodel->body());
+            std::cout << "retmodel seq:" << bmodel->seq << std::endl;
+            std::cout << "retmodel body:" << bmodel->body() << std::endl;
         }
     });
 

@@ -1,15 +1,14 @@
-﻿/**
-*  @FileName    : simpletcpserver.cpp
-*  @Brief       : 使用 ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp服务端使用方法
-*/
-
-#include <QCoreApplication>
+﻿#include <QCoreApplication>
 #include <QDebug>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include "bcf.h"
 using namespace std;
 
+/**
+*  @file    : simpletcpserver.cpp
+*  @brief   : 使用 @class ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp服务端使用方法
+*/
 
 class MyTcpServer : public QTcpServer
 {

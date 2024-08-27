@@ -1,22 +1,27 @@
 ﻿#pragma once
 
+#include "base/bytebuffer.hpp"
+#include "base/endian.hpp"
 #include "iprotocolbuilder.h"
 #include "iprotocolparser.h"
-#include <base/bytebuffer.hpp>
-#include <base/endian.hpp>
+
 namespace bcf
 {
-class ByHeadProtocolModel : public bcf::AbstractProtocolModel
+/**
+* @brief 对于任何被bcf使用的自定义协议,要求【协议类型】和【会话唯一序列号】必须存在,seq后面的内容可以自定义
+* @details
+* \a【协议类型     type】: 供协议解析器来使用，因为支持多个解析器，所以需要根据此字段探测能否被其中的一个解析器所解析.
+* \a【会话唯一序列号 seq】： 因为收到的是异步消息，所以bcf需要根据这个seq判断转发给哪个callback.
+* \a【业务ID       cmd】： 只是"指定头部长度协议"所需要的业务识别号，代表业务类型，bcf不关心，但是业务上应该关心是数据具体的哪个业务，比如是请求数据？还是删除数据？
+* @see
+* \a|*****************head*******************|*****body*****|
+* \a|    type  |   seq   |  cmd    | length  |     XXX      |
+* \a|    1byte |  4byte  | 4byte   | 4bytes  | length bytes |
+* \a|****************************************|**************|
+**/
+class ByHeadProtocolModel : public AbstractProtocolModel
 {
 public:
-    /**
-    bcf要求【协议类型】和【会话唯一序列号】必须存在,seq后面的内容可以自定义
-    协议类型\会话唯一序列号\业务ID\body长度
-    |*****************head*******************|*****body*****|
-    |    type  |   seq   |  cmd    | length  |     XXX      |
-    |    1byte |  4byte  | 4byte   | 4bytes  | length bytes |
-    |****************************************|**************|
-    **/
     uint32_t cmd = 0;
     uint32_t length = 0;
     constexpr static uint16_t body_offset = sizeof(type) + sizeof(seq) + sizeof(cmd) + sizeof(length);
@@ -30,42 +35,44 @@ public:
     {
         return m_body;
     };
-    virtual bcf::PackMode protocolType() override
+    virtual PackMode protocolType() override
     {
-        return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
+        return PackMode::UNPACK_BY_LENGTH_FIELD;
     };
     //e.g. json or std::string
 private:
     std::string m_body;
 };
 
-class ByHeadProtocolBuilder : public bcf::IProtocolBuilder
+class ByHeadProtocolBuilder : public IProtocolBuilder
 {
 public:
-    ByHeadProtocolBuilder(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): IProtocolBuilder(
+    ByHeadProtocolBuilder(PackEndian endian = PackEndian::USE_BIG_ENDIAN): IProtocolBuilder(
             endian) {};
 
-    virtual bcf::PackMode getType()const override
+    virtual PackMode getType()const override
     {
-        return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
+        return PackMode::UNPACK_BY_LENGTH_FIELD;
     };
-    virtual std::shared_ptr<bb::ByteBuffer> build(std::shared_ptr<bcf::AbstractProtocolModel> _model)
+    virtual std::shared_ptr<bb::ByteBuffer> build(const std::shared_ptr<AbstractProtocolModel>&
+                                                  _model)
     override
     {
-        std::shared_ptr<bcf::ByHeadProtocolModel> model =
-            std::dynamic_pointer_cast<bcf::ByHeadProtocolModel>(_model);
+        std::shared_ptr<ByHeadProtocolModel> model =
+            std::dynamic_pointer_cast<ByHeadProtocolModel>(_model);
         if (nullptr == model) {
             return nullptr;
         }
+
         uint8_t type = getType();
         uint32_t bigSeq = model->seq;
         uint32_t bigCmd = model->cmd;
         uint32_t bigLen = model->length;
-        if (m_endian == bcf::PackEndian::USE_BIG_ENDIAN) {
+        if (m_endian == PackEndian::USE_BIG_ENDIAN) {
             bigSeq = htobe32(model->seq);
             bigCmd = htobe32(model->cmd);
             bigLen = htobe32(model->length);
-        } else if (m_endian == bcf::PackEndian::USE_LITTEL_ENDIAN) {
+        } else if (m_endian == PackEndian::USE_LITTEL_ENDIAN) {
             bigSeq = htole32(model->seq);
             bigCmd = htole32(model->cmd);
             bigLen = htole32(model->length);
@@ -82,25 +89,27 @@ public:
     };
 };
 
-class ByHeadProtocolParser : public bcf::IProtocolParser
+class ByHeadProtocolParser : public IProtocolParser
 {
 public:
-    ByHeadProtocolParser(bcf::PackEndian endian = bcf::PackEndian::USE_BIG_ENDIAN): IProtocolParser(
+    ByHeadProtocolParser(PackEndian endian = PackEndian::USE_BIG_ENDIAN): IProtocolParser(
             endian) {};
 
-    virtual bcf::PackMode getType()const override
+    virtual PackMode getType()const override
     {
-        return bcf::PackMode::UNPACK_BY_LENGTH_FIELD;
+        return PackMode::UNPACK_BY_LENGTH_FIELD;
     };
 
-    //使用者自己实现parse函数，回调的目的时因为需要递归callback，解决粘包产生的多包问题
+    /**
+    * @brief 协议解码器实现纯虚的parse函数，回调的目的是因为假如出现粘包、拆包现象，可以递归callback，每callback一次则代表完整的一帧，剩余的数据被缓存在协议解码器内部
+    */
     virtual void parse(const
-                       std::function<void(ParserState state, std::shared_ptr<bcf::AbstractProtocolModel> model)>& callback)
+                       std::function<void(ParserState state, std::shared_ptr<AbstractProtocolModel> model)>& callback)
     override
     {
         int totalLength = m_buffer->size();
-        if (totalLength < bcf::ByHeadProtocolModel::body_offset) {
-            std::cout << "totalLength:" << totalLength << "<" << bcf::ByHeadProtocolModel::body_offset <<
+        if (totalLength < ByHeadProtocolModel::body_offset) {
+            std::cout << "totalLength:" << totalLength << "<" << ByHeadProtocolModel::body_offset <<
                       std::endl;
             return;
         }
@@ -110,25 +119,25 @@ public:
         uint16_t cmd = m_buffer->getInt();
         uint32_t bodylength = m_buffer->getInt();
 
-        if (m_endian == bcf::PackEndian::USE_BIG_ENDIAN) {
+        if (m_endian == PackEndian::USE_BIG_ENDIAN) {
             seq = be32toh(seq);
             cmd = be32toh(cmd);
             bodylength = be32toh(bodylength);
-        } else if (m_endian == bcf::PackEndian::USE_LITTEL_ENDIAN) {
+        } else if (m_endian == PackEndian::USE_LITTEL_ENDIAN) {
             seq = le32toh(seq);
             cmd = le32toh(cmd);
             bodylength = le32toh(bodylength);
         }
 
-        const int reqTotalLength = bcf::ByHeadProtocolModel::body_offset + bodylength;
+        const int reqTotalLength = ByHeadProtocolModel::body_offset + bodylength;
         if (totalLength < reqTotalLength) {
-            std::cout << "totalLength <  " << reqTotalLength;
+            std::cout << "totalLength < " << reqTotalLength;
             return;
         }
 
         bb::ByteBuffer body = m_buffer->mid(bodylength);
 
-        std::shared_ptr<bcf::ByHeadProtocolModel> model = std::make_shared<bcf::ByHeadProtocolModel>();
+        std::shared_ptr<ByHeadProtocolModel> model = std::make_shared<ByHeadProtocolModel>();
         model->type = type;
         model->seq = seq;
         model->cmd = cmd;

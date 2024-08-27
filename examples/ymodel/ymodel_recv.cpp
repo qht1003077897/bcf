@@ -1,12 +1,11 @@
-﻿/**
-*  @FileName    : ymodel_recv.cpp
-*  @Brief       : 此demo演示如何使用bcf接收文件
-*/
-
-#include <QCoreApplication>
-#include <QDebug>
+﻿#include <QCoreApplication>
 #include "bcf.h"
 using namespace std;
+
+/**
+*  @file    : ymodel_recv.cpp
+*  @brief   : 此demo演示如何使用bcf接收文件
+*/
 
 #define CHANNEL_ID_SERIALPORT 0   //作为通道的唯一id，在真实的业务环境中随意定义为任意int即可
 
@@ -23,7 +22,7 @@ int main(int argc, char* argv[])
         std::cerr <<  "withFailedCallback" << std::endl;
     })
     .withConnectionCompletedCallback([](std::shared_ptr<bcf::IChannel> channel) {
-        qDebug() <<  "withConnectionCompletedCallback channelID:" << channel->channelID() ;
+        std::cout <<  "withConnectionCompletedCallback channelID:" << channel->channelID() << std::endl;
     })
     .build();
     requestPtr->connect();
@@ -31,10 +30,10 @@ int main(int argc, char* argv[])
     //New Line
     std::string saveFilePath = "D:/";
     requestPtr->recvFileWithYModel(saveFilePath, [](int progress) {
-        qDebug() << "progress: " << progress ;
+        std::cout << "progress: " << progress << std::endl;
     }, [](bcf::TransmitStatus status) {
-        qDebug() << "status: " << status ;
-    }, 20'000);
+        std::cout << "status: " << status << std::endl;
+    }, 20'000);//配置 20S超时
 
     return app.exec();
 }

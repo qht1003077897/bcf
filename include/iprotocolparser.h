@@ -2,9 +2,9 @@
 
 #include <functional>
 #include <memory>
-#include <base/platform.hpp>
-#include <base/bytebuffer.hpp>
-#include <abstractprotocolmodel.h>
+#include "base/platform.hpp"
+#include "base/bytebuffer.hpp"
+#include "abstractprotocolmodel.h"
 namespace bcf
 {
 enum class ParserState : uint8_t {
@@ -14,18 +14,18 @@ enum class ParserState : uint8_t {
 class IProtocolParser
 {
 public:
-    IProtocolParser(bcf::PackEndian endian) : m_endian(endian) {}
+    IProtocolParser(PackEndian endian) : m_endian(endian) {}
     virtual ~IProtocolParser() = default;
-    virtual bcf::PackMode getType() const = 0;
+    virtual PackMode getType() const = 0;
 
     /**
     * @brief 使用者自己实现parse函数，通过回调返回parser好的数据和parser状态
     */
     virtual void parse(const
-                       std::function<void(ParserState, std::shared_ptr<bcf::AbstractProtocolModel> model)>&) = 0;
+                       std::function<void(ParserState, std::shared_ptr<AbstractProtocolModel> model)>&) = 0;
 
     /**
-    * @brief 嗅探此解析器能否解析buffer,此处要求协议每个报文的起始都是1个字节的协议类型, it is bcf::PackMode
+    * @brief 嗅探此解析器能否解析buffer,此处要求协议每个报文的起始都是1个字节的协议类型, it is @enum bcf::PackMode
     */
     bool sniff(const std::shared_ptr<bb::ByteBuffer>& byteBufferPtr)
     {
@@ -41,6 +41,6 @@ public:
 
 protected:
     std::shared_ptr<bb::ByteBuffer> m_buffer = std::make_shared<bb::ByteBuffer>();
-    bcf::PackEndian m_endian = bcf::USE_BIG_ENDIAN;
+    PackEndian m_endian = USE_BIG_ENDIAN;
 };
 }

@@ -1,6 +1,5 @@
 ﻿#pragma once
 #include <stdint.h>
-#include <iostream>
 #include <memory>
 #include <stdexcept>
 
@@ -18,7 +17,6 @@ enum PackMode : uint8_t {
 class AbstractProtocolModel
 {
 public:
-    // 禁用拷贝构造函数和赋值运算符
     AbstractProtocolModel(const AbstractProtocolModel&) = delete;
     AbstractProtocolModel& operator=(const AbstractProtocolModel&) = delete;
     uint8_t type = PackMode::UNPACK_MODE_NONE;
@@ -33,8 +31,7 @@ public:
     }
 
 protected:
-    // 受保护的构造函数，只能被派生类和工厂函数访问
-    AbstractProtocolModel() {}
+    AbstractProtocolModel() {} // 受保护的构造函数，只能被派生类和工厂函数访问
 };
 
 

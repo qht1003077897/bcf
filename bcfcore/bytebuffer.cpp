@@ -18,7 +18,7 @@
  Modfied 2015 by Ashley Davis (SgtCoDFish)
  */
 
-#include "base/ByteBuffer.hpp"
+#include "base/bytebuffer.hpp"
 
 #ifdef BB_USE_NS
 namespace bb

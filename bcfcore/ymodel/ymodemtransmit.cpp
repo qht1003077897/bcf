@@ -3,7 +3,6 @@
 
 using namespace bcf;
 
-
 #define READ_TIME_MAX   (4)
 #define READ_TIME_OUT   (10)
 #define WRITE_TIME_OUT  (100)
@@ -29,18 +28,18 @@ void YmodemTransmit::setFileName(const std::string& name)
     file.setFileName(QString::fromStdString(name));
 }
 
-void YmodemTransmit::setTimeOut(int timeMillS)
+void YmodemTransmit::setTimeOut(int timeMills)
 {
-    if (timeMillS < 2000) {
-        timeMillS = 2000;//最少2S超时
+    if (timeMills < 2000) {
+        timeMills = 2000;//最少2S超时
     }
 
-    //timeMillS = READ_TIME_OUT * (TimeDivide+1) * (READ_TIME_MAX+1);
-    int devideMixMax = timeMillS / READ_TIME_OUT / (READ_TIME_MAX + 1);
+    //timeMills = READ_TIME_OUT * (TimeDivide+1) * (READ_TIME_MAX+1);
+    int devideMixMax = timeMills / READ_TIME_OUT / (READ_TIME_MAX + 1);
     setTimeDivide(devideMixMax);
 }
 
-void YmodemTransmit::setChannel(std::shared_ptr<IChannel> _channel)
+void YmodemTransmit::setChannel(const std::shared_ptr<IChannel>& _channel)
 {
     channel = _channel;
 }

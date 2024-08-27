@@ -1,13 +1,11 @@
-﻿#include "tcpclientchannel_qt.h"
-#include "base/exception.hpp"
-#ifdef BCF_USE_QT_TCP
+﻿#include <QThread>
 #include <QTcpSocket>
-#include <QDebug>
-#include <QTimer>
-#include <QThread>
+#include "tcpclientchannel_qt.h"
+#include "base/exception.hpp"
+
 using namespace bcf;
 
-TCPClientChannel_QT::TCPClientChannel_QT(const std::string& ip, int port, QObject* parent):
+TCPClientChannel_QT::TCPClientChannel_QT(const QString& ip, int port, QObject* parent):
     QObject(parent)
 {
     m_pTcpClient = new QTcpSocket(this);
@@ -24,7 +22,7 @@ TCPClientChannel_QT::~TCPClientChannel_QT()
     }
 }
 
-void TCPClientChannel_QT::setAddr(const std::string& ip, int port)
+void TCPClientChannel_QT::setAddr(const QString& ip, int port)
 {
     m_ip = ip;
     m_port = port;
@@ -39,7 +37,7 @@ void TCPClientChannel_QT::onConnected()
 
 void TCPClientChannel_QT::openInternal()
 {
-    m_pTcpClient->connectToHost(QString::fromStdString(m_ip), m_port);
+    m_pTcpClient->connectToHost(m_ip, m_port);
 }
 
 bool TCPClientChannel_QT::closeInternal()
@@ -106,7 +104,6 @@ void bcf::TCPClientChannel_QT::setMaxRecvBufferSize(int maxRecvBufferSize)
 void TCPClientChannel_QT::onReceivedData()
 {
     auto res = m_pTcpClient->readAll();
-    qDebug() << "Received data:" << res;
     ByteBufferPtr ptr = std::make_shared<bb::ByteBuffer>();
     ptr->putBytes((uint8_t*)res.data(), res.length());
     if (m_rawdataCallback) {
@@ -119,8 +116,6 @@ void TCPClientChannel_QT::onReceivedData()
 
 void TCPClientChannel_QT::onErrorOccurred(int error)
 {
-    auto err = (QTcpSocket::QAbstractSocket::SocketError)error;
-    qCritical() << "onErrorOccurred:" << err;
     if (m_FailCallback) {
         m_FailCallback();
     }
@@ -129,4 +124,3 @@ void TCPClientChannel_QT::onErrorOccurred(int error)
         m_errorCallback(m_pTcpClient->errorString().toStdString());
     }
 }
-#endif

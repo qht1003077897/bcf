@@ -1,18 +1,14 @@
 ﻿#pragma once
-#include <config.h>
 #include <memory>
-#include "bcfexport.h"
-#include "ichannel.h"
-#include "ymodem.h"
 #include <QTimer>
 #include <QFile>
+#include "ichannel.h"
+#include "ymodem.h"
 
 namespace bcf
 {
 class QSerialPort;
-class BCF_EXPORT YmodemFileReceive  :
-    public QObject,
-    public YModem
+class YmodemFileReceive : public QObject, public YModem
 {
     Q_OBJECT
 public:
@@ -22,9 +18,9 @@ public:
 public:
     void setSaveFilePath(const std::string& filePath);
 
-    void setTimeOut(int timeMillS);
+    void setTimeOut(int timeMills);
 
-    void setChannel(std::shared_ptr<IChannel> channel);
+    void setChannel(const std::shared_ptr<IChannel>& channel);
     std::shared_ptr<IChannel> getChannel();
 
     bool startReceive();

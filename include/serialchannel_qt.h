@@ -1,11 +1,7 @@
 ﻿#pragma once
-#include <config.h>
-
-#ifdef BCF_USE_QT_SERIALPORT
 #include <QObject>
-#include <ichannel.h>
-#include <bcfexport.h>
-#include <base/globaldefine.h>
+#include "ichannel.h"
+#include "bcfexport.h"
 
 class QSerialPort;
 namespace bcf
@@ -15,10 +11,10 @@ class BCF_EXPORT SerialChannel_QT : public QObject, public IChannel
     Q_OBJECT
 
 public:
-    explicit SerialChannel_QT(const std::string& name, QObject* parent = nullptr);
+    explicit SerialChannel_QT(const QString& name, QObject* parent = nullptr);
     virtual ~SerialChannel_QT();
 
-    void setPortName(const std::string& name);
+    void setPortName(const QString& name);
 
     void setBaudRate(int baudRate);
 
@@ -49,4 +45,3 @@ private:
     QSerialPort* m_pSerialPort = nullptr;
 };
 }// namespace bcf
-#endif //BCF_USE_QT_SERIALPORT

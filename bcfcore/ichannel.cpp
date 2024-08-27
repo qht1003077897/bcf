@@ -1,6 +1,6 @@
-﻿#include <ichannel.h>
-#include <base/globaldefine.h>
-#include <base/exception.hpp>
+﻿#include "ichannel.h"
+#include "base/exception.hpp"
+
 using namespace bcf;
 
 IChannel::~IChannel()
@@ -43,7 +43,7 @@ void IChannel::setErrorCallback(ErrorCallback&& errorCallback)
 void IChannel::setFailedCallback(ConnectionFailCallback &&callback)
 {
     m_FailCallback = [call = std::move(callback)]() {
-        std::cout << "Opened fail" << std::endl;
+        std::cout << "open channel fail" << std::endl;
         call();
     };
 }
@@ -51,7 +51,7 @@ void IChannel::setFailedCallback(ConnectionFailCallback &&callback)
 void IChannel::setConnectionCompletedCallback(ConnectionCompletedCallback &&callback)
 {
     m_CompleteCallback = [ =, call = std::move(callback)](std::shared_ptr<bcf::IChannel> c) {
-        std::cout << "Opened success" << std::endl;
+        std::cout << "open channel success" << std::endl;
         startUserCallbackThread();
         m_state = ChannelState::Opened;
         call(c);
@@ -72,9 +72,9 @@ void IChannel::startUserCallbackThread()
     m_usercallbackthread = std::make_shared<std::thread>([this]() {
         while (!m_isexit &&  (m_state != ChannelState::Closed)) {
             std::mutex mtx;
-            std::unique_lock<std::mutex> l(mtx);
-            m_QueueCV.wait_for(l, std::chrono::seconds(5), [this] {
-                std::unique_lock<std::mutex> l(m_QueueMtx);
+            std::unique_lock<std::mutex> outerLock(mtx);
+            m_QueueCV.wait_for(outerLock, std::chrono::seconds(5), [this] {
+                std::unique_lock<std::mutex> outerqLock(m_QueueMtx);
                 return !m_Queue.empty() || m_isexit || m_state == ChannelState::Closed;
             });
 
@@ -83,7 +83,7 @@ void IChannel::startUserCallbackThread()
             }
 
             {
-                std::unique_lock<std::mutex> l(m_QueueMtx, std::try_to_lock);
+                std::unique_lock<std::mutex> localqLock(m_QueueMtx, std::try_to_lock);
                 while (!m_Queue.empty()) {
                     auto  dataqueue = popall();
                     for (auto& str : dataqueue) {
