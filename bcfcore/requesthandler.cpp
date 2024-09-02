@@ -100,10 +100,11 @@ RequestHandlerBuilder& RequestHandlerBuilder::registProtocolParsers(
     return *this;
 }
 
-RequestHandlerBuilder& RequestHandlerBuilder::withChannel(int channelID,
-                                                          CreateChannelFunc&& func)
+RequestHandlerBuilder& RequestHandlerBuilder::withChannel(CreateChannelFunc&& func)
 {
-    m_ConnectOption.m_channelid = channelID;
+
+    int64_t intValue = static_cast<int64_t>(reinterpret_cast<uintptr_t>(this));
+    m_ConnectOption.m_channelid = intValue;
     m_ccfunc = std::move(func);
     return *this;
 }
@@ -186,7 +187,7 @@ void RequestHandler::RequestHandlerPrivate::request(const std::shared_ptr<Abstra
         return;
     }
 
-    if (-2 == channel->send((const char * )buffer->data(), buffer->size())) {
+    if (-2 == channel->send((const char* )buffer->data(), buffer->size())) {
         (callback)(ErrorCode::ERROR_THREAD_AFFINITY, nullptr);
         return;
     }

@@ -2,7 +2,7 @@
 
 using namespace bcf;
 
-void ChannelManager::addChannel(int id, std::shared_ptr<IChannel> channel)
+void ChannelManager::addChannel(int64_t id, std::shared_ptr<IChannel> channel)
 {
     if (nullptr == channel) {
         return;
@@ -17,7 +17,7 @@ void ChannelManager::addChannel(int id, std::shared_ptr<IChannel> channel)
     m_channels.emplace(id, channel);
 }
 
-void ChannelManager::removeChannel(int id)
+void ChannelManager::removeChannel(int64_t id)
 {
     auto iter = m_channels.find(id);
     if (iter == m_channels.end()) {
@@ -27,7 +27,7 @@ void ChannelManager::removeChannel(int id)
     m_channels.erase(iter);
 }
 
-std::shared_ptr<IChannel> ChannelManager::getChannel(int id)
+std::shared_ptr<IChannel> ChannelManager::getChannel(int64_t id)
 {
     const auto iter = m_channels.find(id);
     if (iter == m_channels.end()) {
@@ -37,12 +37,12 @@ std::shared_ptr<IChannel> ChannelManager::getChannel(int id)
     return iter->second;
 }
 
-void ChannelManager::registerChannel(int type, CreateChannelFunc&& func)
+void ChannelManager::registerChannel(int64_t type, CreateChannelFunc&& func)
 {
     m_channelCreators[type] = std::move(func);
 }
 
-std::shared_ptr<bcf::IChannel> ChannelManager::CreateChannel(int id)
+std::shared_ptr<bcf::IChannel> ChannelManager::CreateChannel(int64_t id)
 {
     std::shared_ptr<IChannel> ch = getChannel(id);
     if (nullptr != ch) {

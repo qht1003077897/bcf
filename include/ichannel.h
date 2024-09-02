@@ -41,7 +41,7 @@ struct ConnectOption {
         return *this;
     }
 
-    int m_channelid;
+    int64_t m_channelid;
     int m_timeoutMillSeconds = DEFAULT_TIME_OUT_MILLSCENDS;
     int m_maxRecvBufferSize = DEFAULT_RECV_BUFFER_SIZE;
     ConnectionFailCallback m_FailCallback;
@@ -54,11 +54,11 @@ class IChannel: public std::enable_shared_from_this<IChannel>
 public:
     virtual ~IChannel();
 
-    inline void setChannelID(int channelID)
+    inline void setChannelID(int64_t channelID)
     {
         m_channelID = channelID;
     };
-    inline int channelID() const
+    inline int64_t channelID() const
     {
         return m_channelID;
     };
@@ -79,7 +79,7 @@ public:
     * @note
     * 使用requesthandler进行request请求和使用setRawDataCallback进行原始数据流通信是互斥的。
     * 即:如果设置了RawDataCallback，则经由requesthandler的请求数据也是从此接口返回。所以，
-    * 如果不需要使用原始裸流数据了，请给setRawDataCallback接口设置nullptr,@see setRawDataCallback(DataCallback&&)
+    * 如果不需要使用原始裸流数据了,而又想在同一个requesthandler对象上使用model方式进行请求，则请给setRawDataCallback接口设置nullptr,@see setRawDataCallback(DataCallback&&)
     */
     BCF_EXPORT void setRawDataCallback(DataCallback&&);
     void setErrorCallback(ErrorCallback&&);
@@ -136,10 +136,11 @@ protected:
     ConnectionCompletedCallback         m_CompleteCallback;
 
 private:
-    int                                 m_channelID = -1;
+    int64_t                             m_channelID = -1;
     ChannelState                        m_state = ChannelState::Idel;
     std::atomic_bool                    m_isexit;
     std::mutex                          m_QueueMtx;
+    std::mutex                          m_callbackMtx;  //保护回调函数指针
     std::deque<ByteBufferPtr>           m_Queue;
     std::condition_variable             m_QueueCV;
     std::shared_ptr<std::thread>        m_usercallbackthread;

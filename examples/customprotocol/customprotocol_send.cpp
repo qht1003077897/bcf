@@ -4,8 +4,6 @@
 using namespace std;
 using namespace bcf;
 
-#define CHANNEL_ID_SERIALPORT 0
-
 /**
  *  @brief 这是演示发送者！
  *  下面的例子中演示了如何自定义自己的协议，如果你不想使用bcf内置的支持的协议，你可以参考下面的代码定义自己的通信协议。
@@ -20,10 +18,12 @@ int main(int argc, char* argv[])
 
     auto requestPtr = bcf::RequestHandlerBuilder()
                       .withTimeOut(10'000)
-                      .registProtocolBuilders({std::make_shared<CustomProtocolBuilder>()})
-                      .registProtocolParsers({std::make_shared<CustomProtocolParser > ()})
+                      .registProtocolBuilders({std::make_shared<CustomProtocolBuilder>(),
+                                               std::make_shared<bcf::ByHeadProtocolBuilder>()})
+                      .registProtocolParsers({std::make_shared<CustomProtocolParser> (),
+                                              std::make_shared<bcf::ByHeadProtocolParser>()})
 #ifdef BCF_USE_QT_SERIALPORT
-    .withChannel(CHANNEL_ID_SERIALPORT, []() {
+    .withChannel([]() {
         return std::make_shared<bcf::SerialChannel_QT>("COM2");
     })
 #endif

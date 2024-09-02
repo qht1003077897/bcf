@@ -7,8 +7,6 @@ using namespace std;
 *  @file    : simpletcpclient.cpp
 *  @brief   : 使用 @class ByHeadProtocolModel 协议即指定头部长度协议演示一个简单的bcf tcp客户端使用方法
 */
-#define CHANNEL_ID_TCP 0   //作为通道的唯一id，在真实的业务环境中随意定义为任意int即可
-
 #define CMD_REQ_NAME 0x01         //模拟一个请求对方名字的cmd，在真实的业务环境中请和对端协商定义唯一的int值即可
 
 int main(int argc, char* argv[])
@@ -20,7 +18,7 @@ int main(int argc, char* argv[])
                       .withTimeOut(10'000)
                       .registProtocolBuilders({std::make_shared<bcf::ByHeadProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<bcf::ByHeadProtocolParser>()})
-    .withChannel(CHANNEL_ID_TCP, []() {
+    .withChannel([]() {
         auto channel =
             std::make_shared<bcf::TCPClientChannel_QT>("127.0.0.1", 1234); //使用bcf内部的串口通道类
         return channel;

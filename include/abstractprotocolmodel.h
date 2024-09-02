@@ -17,21 +17,10 @@ enum PackMode : uint8_t {
 class AbstractProtocolModel
 {
 public:
-    AbstractProtocolModel(const AbstractProtocolModel&) = delete;
-    AbstractProtocolModel& operator=(const AbstractProtocolModel&) = delete;
     uint8_t type = PackMode::UNPACK_MODE_NONE;
     uint32_t seq = 0;
 
     virtual PackMode protocolType() = 0;
-
-    template <typename Derived, typename... Args>
-    static std::unique_ptr<Derived> create(Args&&... args)
-    {
-        return std::unique_ptr<Derived>(new Derived(std::forward<Args>(args)...));
-    }
-
-protected:
-    AbstractProtocolModel() {} // 受保护的构造函数，只能被派生类和工厂函数访问
 };
 
 

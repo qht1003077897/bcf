@@ -11,18 +11,18 @@ namespace bcf
 class ChannelManager: public NonCopyable
 {
 public:
-    void registerChannel(int, CreateChannelFunc&& func);
+    void registerChannel(int64_t, CreateChannelFunc&& func);
 
-    std::shared_ptr<IChannel> CreateChannel(int id);
+    std::shared_ptr<IChannel> CreateChannel(int64_t id);
 
-    std::shared_ptr<IChannel> getChannel(int);
-
-private:
-    void addChannel(int, std::shared_ptr<IChannel>);
-    void removeChannel(int);
+    std::shared_ptr<IChannel> getChannel(int64_t);
 
 private:
-    std::map<int, std::shared_ptr<IChannel>> m_channels;
-    std::map<int, CreateChannelFunc> m_channelCreators;
+    void addChannel(int64_t, std::shared_ptr<IChannel>);
+    void removeChannel(int64_t);
+
+private:
+    std::map<int64_t, std::shared_ptr<IChannel>> m_channels;
+    std::map<int64_t, CreateChannelFunc> m_channelCreators;
 };
 }

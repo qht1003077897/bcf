@@ -7,17 +7,16 @@ using namespace std;
 *  @brief       : 演示bcf如何不使用协议model进行通信,而是使用原始数据裸流进行通信
 */
 
-#define CHANNEL_ID_SERIALPORT 0   //作为通道的唯一id，在真实的业务环境中随意定义为任意int即可
-
 int main(int argc, char* argv[])
 {
     QCoreApplication app(argc, argv);
     std::shared_ptr<bcf::IChannel> tmpChannel;
 
     auto requestPtr = bcf::RequestHandlerBuilder()
-    .withChannel(CHANNEL_ID_SERIALPORT, [ &tmpChannel ]() {
+    .withChannel([&tmpChannel]() {
         tmpChannel  = std::make_shared<bcf::SerialChannel_QT>("COM2");  //使用bcf内部的串口通道类
         tmpChannel->setRawDataCallback([](std::shared_ptr<bb::ByteBuffer> bb) {
+            bb->data();
             bb->printHex();
         });
         return tmpChannel;

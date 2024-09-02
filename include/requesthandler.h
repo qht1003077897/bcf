@@ -44,10 +44,9 @@ public:
 
     /**
     * @brief 设置当前 RequestHandler 对象使用的具体通道类，串口？ TCP？
-    * @param [IN]  channelID
     * @param [OUT] CreateChannelFunc  延迟创建channel的回调函数，用户在此回调函数内部返回自己创建的@class IChannel 智能指针，可以使用bcf内部提供的@class SerialChannel_QT 类 \n
     */
-    RequestHandlerBuilder& withChannel(int channelID, CreateChannelFunc&&);
+    RequestHandlerBuilder& withChannel( CreateChannelFunc&&);
 
     /**
     * @brief 设置连接失败的回调函数

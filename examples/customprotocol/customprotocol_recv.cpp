@@ -5,8 +5,6 @@
 using namespace std;
 using namespace bcf;
 
-#define CHANNEL_ID_SERIALPORT 0
-
 /**
  *  @brief 这是演示接收者！
  *  先运行@ref examples/customprotocol/customprotocol_recv.cpp, 再运行@ref examples/customprotocol/customprotocol_send.cpp
@@ -24,7 +22,7 @@ int main(int argc, char* argv[])
                       .registProtocolBuilders({std::make_shared<CustomProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<CustomProtocolParser>()})
 #ifdef BCF_USE_QT_SERIALPORT
-    .withChannel(CHANNEL_ID_SERIALPORT, []() {
+    .withChannel([]() {
         auto channel = std::make_shared<bcf::SerialChannel_QT>("COM3");
         return channel;
     })

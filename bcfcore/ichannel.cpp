@@ -26,7 +26,7 @@ void IChannel::close()
 
 void IChannel::setDataCallback(DataCallback&& callback)
 {
-    std::unique_lock<std::mutex> l(m_QueueMtx);
+    std::unique_lock<std::mutex> l(m_callbackMtx);
     m_dataCallback = std::move(callback);
 }
 
@@ -73,7 +73,7 @@ void IChannel::startUserCallbackThread()
         while (!m_isexit &&  (m_state != ChannelState::Closed)) {
             std::mutex mtx;
             std::unique_lock<std::mutex> outerLock(mtx);
-            m_QueueCV.wait_for(outerLock, std::chrono::seconds(5), [this] {
+            bool status = m_QueueCV.wait_for(outerLock, std::chrono::seconds(5), [this] {
                 std::unique_lock<std::mutex> outerqLock(m_QueueMtx);
                 return !m_Queue.empty() || m_isexit || m_state == ChannelState::Closed;
             });
@@ -82,14 +82,12 @@ void IChannel::startUserCallbackThread()
                 return;
             }
 
-            {
-                std::unique_lock<std::mutex> localqLock(m_QueueMtx, std::try_to_lock);
-                while (!m_Queue.empty()) {
-                    auto  dataqueue = popall();
-                    for (auto& str : dataqueue) {
-                        if (m_dataCallback) {
-                            m_dataCallback(str);
-                        }
+            if (status) {
+                auto  dataqueue = popall();
+                std::unique_lock<std::mutex> callLock(m_callbackMtx);
+                for (auto& str : dataqueue) {
+                    if (m_dataCallback) {
+                        m_dataCallback(str);
                     }
                 }
             }
