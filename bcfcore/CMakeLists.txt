@@ -6,7 +6,7 @@ set(CMAKE_AUTOMOC ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
- set(LINK_BCF Qt${QT_VERSION_MAJOR}::Core)
+set(LINK_BCF Qt${QT_VERSION_MAJOR}::Core)
 
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -32,17 +32,17 @@ add_library(bcf SHARED
 )
 
 if(BCF_USE_QT_SERIALPORT)
+    add_definitions(-DBCF_USE_QT_SERIALPORT)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS SerialPort)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS SerialPort)
     set(LINK_BCF ${LINK_BCF} Qt${QT_VERSION_MAJOR}::SerialPort)
 endif()
 
 if(BCF_USE_QT_TCP)
+    add_definitions(-DBCF_USE_QT_TCP)
     find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Network)
     find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Network)
      set(LINK_BCF ${LINK_BCF} Qt${QT_VERSION_MAJOR}::Network)
 endif()
-
-
 
  target_link_libraries(bcf PRIVATE ${LINK_BCF})

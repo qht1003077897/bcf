@@ -8,8 +8,8 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(BCF_BUILD_EXAMPLES "Build examples" ON)
-option(BCF_USE_QT_TCP "使用bcf内部的TCP能力,由QT5提供" ON)
-option(BCF_USE_QT_SERIALPORT "使用bcf内部的串口能力,由QT5提供" ON)
+option(BCF_USE_QT_SERIALPORT "使用bcf内部的串口能力,由QT5提供,可选编译" ON)
+option(BCF_USE_QT_TCP "使用bcf内部的TCP能力,由QT5提供,可选编译" OFF)
 
 # 生成配置头文件
 configure_file(

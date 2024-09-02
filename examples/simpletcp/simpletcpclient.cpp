@@ -18,11 +18,13 @@ int main(int argc, char* argv[])
                       .withTimeOut(10'000)
                       .registProtocolBuilders({std::make_shared<bcf::ByHeadProtocolBuilder>()})
                       .registProtocolParsers({std::make_shared<bcf::ByHeadProtocolParser>()})
+#ifdef BCF_USE_QT_TCP
     .withChannel([]() {
         auto channel =
             std::make_shared<bcf::TCPClientChannel_QT>("127.0.0.1", 1234); //使用bcf内部的串口通道类
         return channel;
     })
+#endif
     .withFailedCallback([]() {
         std::cerr <<  "withFailedCallback" << std::endl;
     })

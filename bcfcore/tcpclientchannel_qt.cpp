@@ -1,4 +1,5 @@
-﻿#include <QThread>
+﻿#ifdef BCF_USE_QT_TCP
+#include <QThread>
 #include <QTcpSocket>
 #include "tcpclientchannel_qt.h"
 #include "base/exception.hpp"
@@ -124,3 +125,4 @@ void TCPClientChannel_QT::onErrorOccurred(int error)
         m_errorCallback(m_pTcpClient->errorString().toStdString());
     }
 }
+#endif

@@ -1,4 +1,6 @@
-﻿#include <QThread>
+﻿#ifdef BCF_USE_QT_SERIALPORT
+
+#include <QThread>
 #include <QSerialPort>
 #include "serialchannel_qt.h"
 #include "base/exception.hpp"
@@ -162,3 +164,4 @@ void SerialChannel_QT::onErrorOccurred(int error)
         m_errorCallback(m_pSerialPort->errorString().toStdString());
     }
 }
+#endif

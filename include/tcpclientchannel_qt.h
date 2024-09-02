@@ -1,4 +1,5 @@
-﻿#pragma once
+﻿#ifdef BCF_USE_QT_TCP
+#pragma once
 #include <QObject>
 #include "ichannel.h"
 #include "bcfexport.h"
@@ -40,3 +41,4 @@ private:
 
 };
 }// namespace bcf
+#endif
