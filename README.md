@@ -64,13 +64,13 @@
 
 ## Examples
 
-*   [最简单的使用bcf 串口的演示](https://github.com/qht1003077897/bcf/blob/master/examples/simpleserialport)
-*   [最简单的使用bcf TCP的演示](https://github.com/qht1003077897/bcf/blob/master/examples/simpletcp)
-*   [如何收发原始裸流数据](https://github.com/qht1003077897/bcf/blob/master/examples/rawdata)
-*   [自定义通道](https://github.com/qht1003077897/bcf/blob/master/examples/customchannel)
-*   [自定义协议](https://github.com/qht1003077897/bcf/blob/master/examples/customprotocol)
-*   [ymodel 文件发送和接收](https://github.com/qht1003077897/bcf/blob/master/examples/ymodel)
-*   more examples please see [examples](https://github.com/qht1003077897/bcf/blob/master/examples)
+*   [最简单的使用bcf 串口的演示](./examples/simpleserialport)
+*   [最简单的使用bcf TCP的演示](./examples/simpletcp)
+*   [如何收发原始裸流数据](./examples/rawdata)
+*   [自定义通道](./examples/customchannel)
+*   [自定义协议](./examples/customprotocol)
+*   [ymodel 文件发送和接收](./examples/ymodel)
+*   more examples please see [examples](./examples)
 
 ## 一些问题:
 
