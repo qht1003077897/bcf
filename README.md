@@ -22,10 +22,10 @@
 ## Features
 
 *   跨平台 (Linux | Windows)
-*   内置协议（指定头部长度协议），对于内置协议，bcf在内部会处理粘包、分包等情况，保证回调给用户的协议model都是完整的一包数据。当然也支持扩展协议.详见 [customprotocol.cpp](example/customprotocol/customprotocol.h)
+*   内置协议（指定头部长度协议），对于内置协议，bcf在内部会处理粘包、分包等情况，保证回调给用户的协议model都是完整的一包数据。当然也支持扩展协议.详见 [customprotocol.cpp](examples/customprotocol/customprotocol.h)
 *   支持在一个通道上使用多个协议(比如在串口通道上使用两种协议模型).
 *   支持非协议模型的使用方式，比如直接使用原始的16进制裸流字节数据进行通信.
-*   自带qt串口和qtcp通信后端（如果你是QT软件，直接使用bcf自带的串口类或者tcp类就好了）。当然也支持用户扩展，比如使用asio的tcp或者boost的串口等等.详见[customchannel.cpp](example/customchannel/customchannel.cpp)
+*   自带qt串口和qtcp通信后端（如果你是QT软件，直接使用bcf自带的串口类或者tcp类就好了）。当然也支持用户扩展，比如使用asio的tcp或者boost的串口等等.详见[customchannel.cpp](examples/customchannel/customchannel.cpp)
 *   支持使用串口基于Ymodel协议发送文件和接收文件，可以给xshell发送文件进行测试使用.
 
 ## Compatibility
